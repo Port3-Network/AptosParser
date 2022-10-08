@@ -11,15 +11,13 @@ import (
 )
 
 type DataBase struct {
-	TxRpcUrl     []string `toml:"TX_RPC_URL,omitzero"`
-	TxGraphqlUrl []string `toml:"TX_GRAPHQL_URL,omitzero"`
-	User         string   `toml:"USER,omitzero"`
-	Password     string   `toml:"PASSWORD,omitzero"`
-	Host         string   `toml:"HOST,omitzero"`
-	Port         int32    `toml:"PORT,omitzero"`
-	Name         string   `toml:"NAME,omitzero"`
-	LatestDelay  int64    `toml:"LATEST_DELAY,omitzero"`
-	BlockCount   int64    `toml:"BLOCK_COUNT,omitzero"`
+	TxRpcUrl   string `toml:"TX_RPC_URL,omitzero"`
+	User       string `toml:"USER,omitzero"`
+	Password   string `toml:"PASSWORD,omitzero"`
+	Host       string `toml:"HOST,omitzero"`
+	Port       int32  `toml:"PORT,omitzero"`
+	Name       string `toml:"NAME,omitzero"`
+	BlockCount int64  `toml:"BLOCK_COUNT,omitzero"`
 }
 
 var (
@@ -31,7 +29,6 @@ var (
 	GDatabase   *DataBase
 	GNetwork    string
 	GMysql      *oo.MysqlPool
-	GRedis      *oo.RedisPool
 )
 
 func main() {

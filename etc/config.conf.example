@@ -1,4 +1,5 @@
 [main]              # newtwork, mainnet/devnet/testnet
+TX_RPC_URL = ""     # rpc url
 TYPE = ""           # db type, current just mysql
 USER = ""           # db connect user
 PASSWORD = ""       # db connect password
