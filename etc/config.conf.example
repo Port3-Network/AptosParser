@@ -1,0 +1,12 @@
+[main]              # newtwork, mainnet/devnet/testnet
+TX_RPC_URL = ""     # rpc url
+TYPE = ""           # db type, current just mysql
+USER = ""           # db connect user
+PASSWORD = ""       # db connect password
+HOST = ""           # db host, <string> eg: 127.0.0.1
+PORT =              # db port, <int> eg: 3306
+NAME = ""           # db database
+CHARSET = ""        # db character set, <string> eg: utf8mb4
+BLOCK_COUNT =       # how many blocks to get at once, <int> eg: 1
+ENABLE_DEBUG =      # api debug, <bool> eg: false
+API_PORT =          # api port, <int> eg: 8080
