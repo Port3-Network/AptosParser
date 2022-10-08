@@ -60,9 +60,9 @@ type Payload struct {
 	UpdateAt       string `db:"update_at,omitempty"`
 }
 
-const TableRecordToken = "record_token"
+const TableRecordCoin = "record_coin"
 
-type RecordToken struct {
+type RecordCoin struct {
 	Id           int64  `db:"id,omitempty"`
 	Version      int64  `db:"version,omitempty"`
 	Hash         string `db:"hash,omitempty"`
@@ -77,9 +77,9 @@ type RecordToken struct {
 	UpdateAt     string `db:"update_at,omitempty"`
 }
 
-const TableHistoryToken = "history_token"
+const TableHistoryCoin = "history_coin"
 
-type HistoryToken struct {
+type HistoryCoin struct {
 	Id       int64  `db:"id,omitempty"`
 	Version  int64  `db:"version,omitempty"`
 	Hash     string `db:"hash,omitempty"`
@@ -89,20 +89,6 @@ type HistoryToken struct {
 	Resource string `db:"resource,omitempty"`
 	Amount   string `db:"amount,omitempty"`
 	Action   int64  `db:"action,omitempty"`
-	CreateAt string `db:"create_at,omitempty"`
-	UpdateAt string `db:"update_at,omitempty"`
-}
-
-const TableAssetToken = "asset_token"
-
-type AssetToken struct {
-	Id       int64  `db:"id,omitempty"`
-	Version  int64  `db:"version,omitempty"`
-	Hash     string `db:"hash,omitempty"`
-	TxTime   int64  `db:"tx_time,omitempty"`
-	Resource string `db:"resource,omitempty"`
-	Amount   string `db:"amount,omitempty"`
-	Owner    string `db:"owner,omitempty"`
 	CreateAt string `db:"create_at,omitempty"`
 	UpdateAt string `db:"update_at,omitempty"`
 }

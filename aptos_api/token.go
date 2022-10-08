@@ -68,7 +68,7 @@ func GetTokenAction(c *gin.Context) {
 	}
 
 	sqler := oo.NewSqler().Table(models.TablePayload+" AS p").
-		LeftJoin(models.TableHistoryToken+" AS h", "p.version=h.version").
+		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version").
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset)).
 		Order("p.tx_time DESC")
@@ -105,7 +105,7 @@ func GetTokenAction(c *gin.Context) {
 	}
 
 	sqler2 := oo.NewSqler().Table(models.TablePayload+" AS p").
-		LeftJoin(models.TableHistoryToken+" AS h", "p.version=h.version")
+		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version")
 
 	if req.Address != "" {
 		sqler.Where("p.sender", req.Address)
@@ -186,7 +186,7 @@ func GetTokenInventory(c *gin.Context) {
 		Owner        string `db:"sender"`
 	}
 
-	sqler := oo.NewSqler().Table(models.TableRecordToken).
+	sqler := oo.NewSqler().Table(models.TableRecordCoin).
 		Order("id DESC").
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset))
@@ -214,7 +214,7 @@ func GetTokenInventory(c *gin.Context) {
 		})
 	}
 
-	sqler2 := oo.NewSqler().Table(models.TableRecordToken)
+	sqler2 := oo.NewSqler().Table(models.TableRecordCoin)
 	if req.Resource != "" {
 		sqler2.Where("resource", req.Resource)
 	}
@@ -293,8 +293,8 @@ func GetTokenTransactions(c *gin.Context) {
 		FuncName sql.NullString `db:"payload_func"`
 	}
 
-	sql := oo.NewSqler().Table(models.TableHistoryToken+" AS h").
-		LeftJoin(models.TableRecordToken+" AS r", "h.resource=r.resource").
+	sql := oo.NewSqler().Table(models.TableHistoryCoin+" AS h").
+		LeftJoin(models.TableRecordCoin+" AS r", "h.resource=r.resource").
 		LeftJoin(models.TablePayload+" AS p", "h.version=p.version").
 		Order("h.id DESC").
 		Offset(int(req.Offset)).
@@ -328,7 +328,7 @@ func GetTokenTransactions(c *gin.Context) {
 		})
 	}
 
-	sql2 := oo.NewSqler().Table(models.TableHistoryToken)
+	sql2 := oo.NewSqler().Table(models.TableHistoryCoin)
 	if len(req.Resource) > 0 {
 		sql2.Where("resource", req.Resource)
 	}

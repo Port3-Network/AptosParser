@@ -12,12 +12,11 @@ import (
 type DbSaver struct {
 	height uint64
 
-	block        []*models.Block
-	transaction  []*models.Transaction
-	payload      []*models.Payload
-	recordToken  []*models.RecordToken
-	historyToken []*models.HistoryToken
-	assetToken   []*models.AssetToken
+	block       []*models.Block
+	transaction []*models.Transaction
+	payload     []*models.Payload
+	recordCoin  []*models.RecordCoin
+	historyCoin []*models.HistoryCoin
 	// recordToken  map[string]*models.RecordToken
 }
 
@@ -28,10 +27,9 @@ func NewDbSaver(height, block_ts uint64) *DbSaver {
 		block:       make([]*models.Block, 0),
 		transaction: make([]*models.Transaction, 0),
 		payload:     make([]*models.Payload, 0),
-		recordToken: make([]*models.RecordToken, 0),
+		recordCoin:  make([]*models.RecordCoin, 0),
 		// recordToken:  make(map[string]*models.RecordToken),
-		historyToken: make([]*models.HistoryToken, 0),
-		assetToken:   make([]*models.AssetToken, 0),
+		historyCoin: make([]*models.HistoryCoin, 0),
 	}
 }
 
@@ -61,11 +59,11 @@ func (db *DbSaver) Commit() error {
 		oo.LogD("doCommitPayload %v", err)
 		return err
 	}
-	if err := db.doCommitRecordToken(dbTx); err != nil {
+	if err := db.doCommitRecordCoin(dbTx); err != nil {
 		oo.LogD("doCommitRecordToken %v", err)
 		return err
 	}
-	if err := db.doCommitHistoryToken(dbTx); err != nil {
+	if err := db.doCommitHistoryCoin(dbTx); err != nil {
 		oo.LogD("doCommitHistoryToken %v", err)
 		return err
 	}
@@ -128,35 +126,35 @@ func (db *DbSaver) doCommitPayload(tx *sql.Tx) (err error) {
 	return nil
 }
 
-func (db *DbSaver) doCommitRecordToken(tx *sql.Tx) (err error) {
-	if len(db.recordToken) == 0 {
+func (db *DbSaver) doCommitRecordCoin(tx *sql.Tx) (err error) {
+	if len(db.recordCoin) == 0 {
 		return nil
 	}
 	var vals []string
-	for _, record := range db.recordToken {
+	for _, record := range db.recordCoin {
 		v := fmt.Sprintf("(%d,'%s',%d,'%s','%s','%s','%s','%s','%s')",
 			record.Version, record.Hash, record.TxTime, record.Sender, record.ModuleName, record.ContractName, record.Resource, record.Name, record.Symbol)
 		vals = append(vals, v)
 	}
-	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sender,module_name,contract_name,resource,name,symbol) VALUES %s`, models.TableRecordToken, strings.Join(vals, ","))
+	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sender,module_name,contract_name,resource,name,symbol) VALUES %s`, models.TableRecordCoin, strings.Join(vals, ","))
 	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (db *DbSaver) doCommitHistoryToken(tx *sql.Tx) (err error) {
-	if len(db.historyToken) == 0 {
+func (db *DbSaver) doCommitHistoryCoin(tx *sql.Tx) (err error) {
+	if len(db.historyCoin) == 0 {
 		return nil
 	}
 
 	var vals []string
-	for _, history := range db.historyToken {
+	for _, history := range db.historyCoin {
 		v := fmt.Sprintf("(%d,'%s',%d,'%s','%s','%s','%s',%d)",
 			history.Version, history.Hash, history.TxTime, history.Sender, history.Receiver, history.Resource, history.Amount, history.Action)
 		vals = append(vals, v)
 	}
-	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sender,receiver,resource,amount,action) VALUES %s`, models.TableHistoryToken, strings.Join(vals, ","))
+	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sender,receiver,resource,amount,action) VALUES %s`, models.TableHistoryCoin, strings.Join(vals, ","))
 	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
 		return err
 	}
@@ -175,22 +173,8 @@ func (db *DbSaver) AddPayload(payload *models.Payload) {
 	db.payload = append(db.payload, payload)
 }
 
-func (db *DbSaver) HandlerAddRecordToken(resource string, data *models.RecordToken) {
-	// if _, ok := db.recordToken[resource]; ok {
-	// 	return
-	// }
-	// db.recordToken[resource] = &models.RecordToken{
-	// 	Version:      data.Version,
-	// 	Hash:         data.Hash,
-	// 	TxTime:       data.TxTime,
-	// 	Sender:       data.Sender,
-	// 	ModuleName:   data.ModuleName,
-	// 	ContractName: data.ContractName,
-	// 	Resource:     data.Resource,
-	// 	Name:         data.Name,
-	// 	Symbol:       data.Symbol,
-	// }
-	db.recordToken = append(db.recordToken, &models.RecordToken{
+func (db *DbSaver) HandlerAddRecordToken(resource string, data *models.RecordCoin) {
+	db.recordCoin = append(db.recordCoin, &models.RecordCoin{
 		Version:      data.Version,
 		Hash:         data.Hash,
 		TxTime:       data.TxTime,

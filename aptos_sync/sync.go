@@ -20,21 +20,6 @@ func FullSync() {
 
 		start := syncNum
 		saver := NewDbSaver(uint64(start)+uint64(GDatabase.BlockCount), 0)
-		// block, err := GetBlocks(start)
-		// if err != nil {
-		// 	oo.LogD("GetBlocks err, msg: %v", err)
-		// 	continue
-		// }
-
-		// height, _ := strconv.ParseInt(block.BlockHeight, 10, 64)
-		// blockTime, _ := strconv.ParseInt(block.BlockTimestamp, 10, 64)
-		// saver.AddBlock(&models.Block{
-		// 	Height:       height,
-		// 	Hash:         block.BlockHash,
-		// 	BlockTime:    blockTime,
-		// 	FirstVersion: block.FirstVersion,
-		// 	LastVersion:  block.LastVersion,
-		// })
 
 		txs, err := GetTransactions(strconv.FormatInt(start, 10), int(GDatabase.BlockCount))
 		if err != nil {
@@ -52,7 +37,6 @@ func FullSync() {
 				}
 			}
 		}
-
 		if err := saver.Commit(); err != nil {
 			oo.LogW("saver.Commit err %v", err)
 			continue
@@ -63,7 +47,7 @@ func FullSync() {
 
 func GetTransactions(start string, limit int) (*[]models.TransactionRsp, error) {
 	r := &[]models.TransactionRsp{}
-	url := fmt.Sprintf("https://fullnode.devnet.aptoslabs.com/v1/transactions?start=%s&limit=%d", start, limit)
+	url := fmt.Sprintf("%s/transactions?start=%s&limit=%d", GDatabase.TxRpcUrl, start, limit)
 	buf, err := models.HttpGet(url, 2)
 	if err != nil {
 		return r, fmt.Errorf("tx HttpGet msg: %v", err)
@@ -78,7 +62,7 @@ func GetTransactions(start string, limit int) (*[]models.TransactionRsp, error) 
 
 func GetBlocks(blockNum int64) (*models.BlockRsp, error) {
 	r := &models.BlockRsp{}
-	url := fmt.Sprintf("https://fullnode.devnet.aptoslabs.com/v1/blocks/by_height/%d?with_transactions=true", blockNum)
+	url := fmt.Sprintf("%s/blocks/by_height/%d?with_transactions=true", GDatabase.TxRpcUrl, blockNum)
 	buf, err := models.HttpGet(url, 2)
 	if err != nil {
 		return r, fmt.Errorf("blocks HttpGet msg: %v", err)

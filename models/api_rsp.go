@@ -63,9 +63,15 @@ type TxEvent struct {
 	Key            string    `json:"key"`
 	SequenceNumber string    `json:"sequence_number"`
 	Type           string    `json:"type"`
+	Guid           EventGuid `json:"guid"`
 	Data           EventData `json:"data"`
 }
 
 type EventData struct {
 	Amount string `json:"amount"`
+}
+
+type EventGuid struct {
+	CreationNumber string `json:"creation_number"`
+	AccountAddress string `json:"account_address"`
 }
