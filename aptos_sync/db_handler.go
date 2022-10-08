@@ -64,10 +64,9 @@ func handlerHistoryCoin(saver *DbSaver, version, txTime, sequenceNum int64, data
 	var action int64
 	var sender, receiver string = ZeroAddress, ZeroAddress
 
-	if len(data.Payload.TypeArguments) >= 0 {
+	if len(data.Payload.TypeArguments) > 0 {
 		resource = data.Payload.TypeArguments[0]
 	}
-
 	if len(data.Payload.Arguments) > 1 {
 		amount = data.Payload.Arguments[1].(string)
 	}
