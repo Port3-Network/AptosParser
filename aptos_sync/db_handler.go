@@ -20,11 +20,14 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 		// transaction -> done
 		handlerTx(db, version, txTime, sequenceNum, data)
 
+		// record ->
+		if data.Payload.Function == FunctionPublishPkg {
+			handlerRecordCoin(db, version, txTime, sequenceNum, data)
+			return nil
+		}
+
 		// history -> done
 		handlerHistoryCoin(db, version, txTime, sequenceNum, data)
-
-		// record ->
-		handlerRecordCoin(db, version, txTime, sequenceNum, data)
 	default:
 		oo.LogD("payload type [%s] not found", data.Payload.Type)
 	}
@@ -103,11 +106,11 @@ func handlerHistoryCoin(saver *DbSaver, version, txTime, sequenceNum int64, data
 }
 
 func handlerRecordCoin(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {
-	if data.Payload.Function != FunctionPublishPkg {
-		return
-	}
 	for _, change := range data.Changes {
 		contract := ParseType(change.Data.Type)
+		if contract == nil {
+			continue
+		}
 		switch contract.Type {
 		case ChangeTypeCoinInfo:
 			saver.HandlerAddRecordToken(contract.Resource, &models.RecordCoin{
