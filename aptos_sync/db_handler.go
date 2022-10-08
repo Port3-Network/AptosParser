@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/Port3-Network/AptosParser/models"
@@ -12,9 +10,6 @@ import (
 func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 	switch data.Payload.Type {
 	case TypeCallFunction:
-		d, _ := json.Marshal(data)
-		fmt.Printf("data: %v\n", string(d))
-		// var resource string
 		version, _ := strconv.ParseInt(data.Version, 10, 64)
 		txTime, _ := strconv.ParseInt(data.Timestamp, 10, 64)
 		sequenceNum, _ := strconv.ParseInt(data.SequenceNumber, 10, 64)
