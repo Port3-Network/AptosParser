@@ -47,11 +47,12 @@ type ChangeData struct {
 }
 
 type ChangeDataSubD struct {
-	Decimals      int64           `json:"decimals"`
-	Name          string          `json:"name"`
-	Symbol        string          `json:"symbol"`
-	WithdrawEvent ChangeDataEvent `json:"withdraw_events"`
-	DepositEvent  ChangeDataEvent `json:"deposit_events"`
+	Decimals              int64           `json:"decimals"`
+	Name                  string          `json:"name"`
+	Symbol                string          `json:"symbol"`
+	WithdrawEvent         ChangeDataEvent `json:"withdraw_events"`
+	DepositEvent          ChangeDataEvent `json:"deposit_events"`
+	CreateCollectionEvent ChangeDataEvent `json:"create_collection_events"`
 }
 
 type ChangeDataEvent struct {
@@ -75,14 +76,19 @@ type TxPayload struct {
 
 type TxEvent struct {
 	Key            string    `json:"key"`
-	SequenceNumber string    `json:"sequence_number"`
-	Type           string    `json:"type"`
-	Guid           EventGuid `json:"guid"`
-	Data           EventData `json:"data"`
+	SequenceNumber string    `json:"sequence_number"` //
+	Type           string    `json:"type"`            //
+	Guid           EventGuid `json:"guid"`            //
+	Data           EventData `json:"data"`            //
 }
 
 type EventData struct {
-	Amount string `json:"amount"`
+	Amount         string `json:"amount"`
+	CollectionName string `json:"collection_name"`
+	Creator        string `json:"creator"`
+	Description    string `json:"description"`
+	Maximum        string `json:"maximum"`
+	Uri            string `json:"uri"`
 }
 
 type EventGuid struct {
