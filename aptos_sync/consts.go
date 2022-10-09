@@ -18,9 +18,10 @@ const (
 	EventWithdraw    = "0x1::coin::WithdrawEvent"
 	EventDeposit     = "0x1::coin::DepositEvent"
 
-	FunctionPublishPkg = "0x1::code::publish_package_txn"
-	FunctionMint       = "0x1::managed_coin::mint"
-	FunctionTransfer   = "0x1::coin::transfer"
+	FunctionPublishPkg      = "0x1::code::publish_package_txn"
+	FunctionMint            = "0x1::managed_coin::mint"
+	FunctionTransfer        = "0x1::coin::transfer"
+	FunctionAccountTransfer = "0x1::aptos_account::transfer"
 
 	ChangeTypeCoinInfo = "0x1::coin::CoinInfo"
 )
