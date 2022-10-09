@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/Port3-Network/AptosParser/models"
@@ -12,9 +10,6 @@ import (
 func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 	switch data.Payload.Type {
 	case TypeCallFunction:
-		d, _ := json.Marshal(data)
-		fmt.Printf("data: %v\n", string(d))
-		// var resource string
 		version, _ := strconv.ParseInt(data.Version, 10, 64)
 		txTime, _ := strconv.ParseInt(data.Timestamp, 10, 64)
 		sequenceNum, _ := strconv.ParseInt(data.SequenceNumber, 10, 64)
@@ -25,11 +20,14 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 		// transaction -> done
 		handlerTx(db, version, txTime, sequenceNum, data)
 
+		// record ->
+		if data.Payload.Function == FunctionPublishPkg {
+			handlerRecordCoin(db, version, txTime, sequenceNum, data)
+			return nil
+		}
+
 		// history -> done
 		handlerHistoryCoin(db, version, txTime, sequenceNum, data)
-
-		// record ->
-		handlerRecordCoin(db, version, txTime, sequenceNum, data)
 	default:
 		oo.LogD("payload type [%s] not found", data.Payload.Type)
 	}
@@ -69,14 +67,6 @@ func handlerHistoryCoin(saver *DbSaver, version, txTime, sequenceNum int64, data
 	var action int64
 	var sender, receiver string = ZeroAddress, ZeroAddress
 
-	if len(data.Payload.TypeArguments) >= 0 {
-		resource = data.Payload.TypeArguments[0]
-	}
-
-	if len(data.Payload.Arguments) > 1 {
-		amount = data.Payload.Arguments[1].(string)
-	}
-
 	for _, event := range data.Events {
 		switch event.Type {
 		case EventDeposit:
@@ -96,6 +86,13 @@ func handlerHistoryCoin(saver *DbSaver, version, txTime, sequenceNum int64, data
 		action = ActionTransfer
 	}
 
+	if len(data.Payload.TypeArguments) > 0 {
+		resource = data.Payload.TypeArguments[0]
+	}
+	if len(data.Payload.Arguments) > 1 {
+		amount = data.Payload.Arguments[1].(string)
+	}
+
 	saver.historyCoin = append(saver.historyCoin, &models.HistoryCoin{
 		Version:  version,
 		Hash:     data.Hash,
@@ -109,11 +106,11 @@ func handlerHistoryCoin(saver *DbSaver, version, txTime, sequenceNum int64, data
 }
 
 func handlerRecordCoin(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {
-	if data.Payload.Function != FunctionPublishPkg {
-		return
-	}
 	for _, change := range data.Changes {
 		contract := ParseType(change.Data.Type)
+		if contract == nil {
+			continue
+		}
 		switch contract.Type {
 		case ChangeTypeCoinInfo:
 			saver.HandlerAddRecordToken(contract.Resource, &models.RecordCoin{
