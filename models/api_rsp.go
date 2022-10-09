@@ -47,9 +47,23 @@ type ChangeData struct {
 }
 
 type ChangeDataSubD struct {
-	Decimals int64  `json:"decimals"`
-	Name     string `json:"name"`
-	Symbol   string `json:"symbol"`
+	Decimals      int64           `json:"decimals"`
+	Name          string          `json:"name"`
+	Symbol        string          `json:"symbol"`
+	WithdrawEvent ChangeDataEvent `json:"withdraw_events"`
+	DepositEvent  ChangeDataEvent `json:"deposit_events"`
+}
+
+type ChangeDataEvent struct {
+	Counter string `json:"counter"`
+	Guid    Guid   `json:"guid"`
+}
+type Guid struct {
+	ID GuidID `json:"id"`
+}
+type GuidID struct {
+	Addr        string `json:"addr"`
+	CreationNum string `json:"creation_num"`
 }
 
 type TxPayload struct {

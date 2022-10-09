@@ -41,6 +41,7 @@ func FullSync() {
 			oo.LogW("saver.Commit err %v", err)
 			continue
 		}
+		// return
 	}
 
 }

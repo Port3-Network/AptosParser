@@ -63,46 +63,86 @@ func handlerTx(saver *DbSaver, version, txTime, sequenceNum int64, data models.T
 }
 
 func handlerHistoryCoin(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {
-	var resource, amount string
-	var action int64
-	var sender, receiver string = ZeroAddress, ZeroAddress
-
 	for _, event := range data.Events {
+		var resource, amount string
+		var action int64
+		var sender, receiver string = ZeroAddress, ZeroAddress
+		cnum := event.Guid.CreationNumber
+		addr := event.Guid.AccountAddress
 		switch event.Type {
 		case EventDeposit:
 			receiver = event.Guid.AccountAddress
+			amount = event.Data.Amount
+			for _, c := range data.Changes {
+				if cnum == c.Data.Data.DepositEvent.Guid.ID.CreationNum && addr == c.Data.Data.DepositEvent.Guid.ID.Addr {
+					t := ParseType(c.Data.Type)
+					if t == nil {
+						continue
+					}
+					resource = t.Resource
+				}
+			}
 		case EventWithdraw:
 			sender = event.Guid.AccountAddress
+			amount = event.Data.Amount
+			for _, c := range data.Changes {
+				if cnum == c.Data.Data.WithdrawEvent.Guid.ID.CreationNum && addr == c.Data.Data.WithdrawEvent.Guid.ID.Addr {
+					t := ParseType(c.Data.Type)
+					if t == nil {
+						continue
+					}
+					resource = t.Resource
+				}
+			}
 		}
+		if sender == receiver && sender == ZeroAddress {
+			continue
+		} else if sender == ZeroAddress {
+			action = ActionMint
+		} else if receiver == ZeroAddress {
+			action = ActionBurn
+		} else {
+			action = ActionTransfer
+		}
+		saver.historyCoin = append(saver.historyCoin, &models.HistoryCoin{
+			Version:  version,
+			Hash:     data.Hash,
+			TxTime:   txTime,
+			Sender:   sender,
+			Receiver: receiver,
+			Resource: resource,
+			Amount:   amount,
+			Action:   action,
+		})
 	}
 
-	if sender == receiver && sender == ZeroAddress {
-		return
-	} else if sender == ZeroAddress {
-		action = ActionMint
-	} else if receiver == ZeroAddress {
-		action = ActionBurn
-	} else {
-		action = ActionTransfer
-	}
+	// if sender == receiver && sender == ZeroAddress {
+	// 	return
+	// } else if sender == ZeroAddress {
+	// 	action = ActionMint
+	// } else if receiver == ZeroAddress {
+	// 	action = ActionBurn
+	// } else {
+	// 	action = ActionTransfer
+	// }
 
-	if len(data.Payload.TypeArguments) > 0 {
-		resource = data.Payload.TypeArguments[0]
-	}
-	if len(data.Payload.Arguments) > 1 {
-		amount = data.Payload.Arguments[1].(string)
-	}
+	// if len(data.Payload.TypeArguments) > 0 {
+	// 	resource = data.Payload.TypeArguments[0]
+	// }
+	// if len(data.Payload.Arguments) > 1 {
+	// 	amount = data.Payload.Arguments[1].(string)
+	// }
 
-	saver.historyCoin = append(saver.historyCoin, &models.HistoryCoin{
-		Version:  version,
-		Hash:     data.Hash,
-		TxTime:   txTime,
-		Sender:   sender,
-		Receiver: receiver,
-		Resource: resource,
-		Amount:   amount,
-		Action:   action,
-	})
+	// saver.historyCoin = append(saver.historyCoin, &models.HistoryCoin{
+	// 	Version:  version,
+	// 	Hash:     data.Hash,
+	// 	TxTime:   txTime,
+	// 	Sender:   sender,
+	// 	Receiver: receiver,
+	// 	Resource: resource,
+	// 	Amount:   amount,
+	// 	Action:   action,
+	// })
 }
 
 func handlerRecordCoin(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {

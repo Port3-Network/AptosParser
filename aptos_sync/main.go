@@ -32,11 +32,11 @@ var (
 )
 
 func main() {
-	defer func() {
-		if err := recover(); nil != err {
-			oo.LogW("panic err %v", err)
-		}
-	}()
+	// defer func() {
+	// 	if err := recover(); nil != err {
+	// 		oo.LogW("panic err %v", err)
+	// 	}
+	// }()
 
 	var err error
 
