@@ -29,7 +29,7 @@ const TableTransaction = "transaction"
 
 type Transaction struct {
 	Id             int64  `db:"id,omitempty"`
-	Version        int64  `db:"version,omitempty"`
+	Version        string `db:"version,omitempty"`
 	Hash           string `db:"hash,omitempty"`
 	TxTime         int64  `db:"tx_time,omitempty"`
 	Success        bool   `db:"success,omitempty"`
@@ -49,7 +49,7 @@ const TablePayload = "payload"
 
 type Payload struct {
 	Id             int64  `db:"id,omitempty"`
-	Version        int64  `db:"version,omitempty"`
+	Version        string `db:"version,omitempty"`
 	Hash           string `db:"hash,omitempty"`
 	TxTime         int64  `db:"tx_time,omitempty"`
 	SequenceNumber int64  `db:"sequence_number,omitempty"`
@@ -64,7 +64,7 @@ const TableRecordCoin = "record_coin"
 
 type RecordCoin struct {
 	Id           int64  `db:"id,omitempty"`
-	Version      int64  `db:"version,omitempty"`
+	Version      string `db:"version,omitempty"`
 	Hash         string `db:"hash,omitempty"`
 	TxTime       int64  `db:"tx_time,omitempty"`
 	Sender       string `db:"sender,omitempty"`
@@ -81,7 +81,7 @@ const TableHistoryCoin = "history_coin"
 
 type HistoryCoin struct {
 	Id       int64  `db:"id,omitempty"`
-	Version  int64  `db:"version,omitempty"`
+	Version  string `db:"version,omitempty"`
 	Hash     string `db:"hash,omitempty"`
 	TxTime   int64  `db:"tx_time,omitempty"`
 	Sender   string `db:"sender,omitempty"`
@@ -97,7 +97,7 @@ const TableCollection = "collection"
 
 type Collection struct {
 	Id          int64  `db:"id,omitempty"`
-	Version     int64  `db:"version,omitempty"`
+	Version     string `db:"version,omitempty"`
 	Hash        string `db:"hash,omitempty"`
 	TxTime      int64  `db:"tx_time,omitempty"`
 	Sender      string `db:"sender,omitempty"`
@@ -105,7 +105,7 @@ type Collection struct {
 	Name        string `db:"name,omitempty"`
 	Description string `db:"description,omitempty"`
 	Uri         string `db:"uri,omitempty"`
-	Maximun     string `db:"maximun,omitempty"`
+	Maximum     string `db:"maximum,omitempty"`
 	Type        string `db:"type,omitempty"`
 	CreateAt    string `db:"create_at,omitempty"`
 	UpdateAt    string `db:"update_at,omitempty"`
@@ -115,7 +115,7 @@ const TableRecordToken = "record_token"
 
 type RecordToken struct {
 	Id          int64  `db:"id,omitempty"`
-	Version     int64  `db:"version,omitempty"`
+	Version     string `db:"version,omitempty"`
 	Hash        string `db:"hash,omitempty"`
 	TxTime      int64  `db:"tx_time,omitempty"`
 	Sender      string `db:"sender,omitempty"`
@@ -124,6 +124,8 @@ type RecordToken struct {
 	Name        string `db:"name,omitempty"`
 	Description string `db:"description,omitempty"`
 	Uri         string `db:"uri,omitempty"`
+	Maximum     string `db:"maximum,omitempty"`
+	Type        string `json:"type"`
 	CreateAt    string `db:"create_at,omitempty"`
 	UpdateAt    string `db:"update_at,omitempty"`
 }
@@ -132,7 +134,7 @@ const TableAssetToken = "asset_token"
 
 type AssetToken struct {
 	Id         int64  `db:"id,omitempty"`
-	Version    int64  `db:"version,omitempty"`
+	Version    string `db:"version,omitempty"`
 	Hash       string `db:"hash,omitempty"`
 	TxTime     int64  `db:"tx_time,omitempty"`
 	Owner      string `db:"owner,omitempty"`
@@ -148,7 +150,7 @@ const TableHistoryToken = "history_token"
 
 type HistoryToken struct {
 	Id         int64  `db:"id,omitempty"`
-	Version    int64  `db:"version,omitempty"`
+	Version    string `db:"version,omitempty"`
 	Hash       string `db:"hash,omitempty"`
 	TxTime     int64  `db:"tx_time,omitempty"`
 	Sender     string `db:"sender,omitempty"`
@@ -157,7 +159,7 @@ type HistoryToken struct {
 	Collection string `db:"collection,omitempty"`
 	Name       string `db:"name,omitempty"`
 	Amount     string `db:"amount,omitempty"`
-	Action     string `db:"action,omitempty"`
+	Action     int64  `db:"action,omitempty"`
 	CreateAt   string `db:"create_at,omitempty"`
 	UpdateAt   string `db:"update_at,omitempty"`
 }
