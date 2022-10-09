@@ -28,6 +28,8 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 
 		// history -> done
 		handlerHistoryCoin(db, version, txTime, sequenceNum, data)
+
+		handlerCollection(db, version, txTime, sequenceNum, data)
 	default:
 		oo.LogD("payload type [%s] not found", data.Payload.Type)
 	}
@@ -35,7 +37,7 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 }
 
 func handlerPayload(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {
-	saver.AddPayload(&models.Payload{
+	saver.payload = append(saver.payload, &models.Payload{
 		Version:        version,
 		Hash:           data.Hash,
 		TxTime:         txTime,
@@ -47,7 +49,7 @@ func handlerPayload(saver *DbSaver, version, txTime, sequenceNum int64, data mod
 }
 
 func handlerTx(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {
-	saver.AddTransaction(&models.Transaction{
+	saver.transaction = append(saver.transaction, &models.Transaction{
 		Version:        version,
 		Hash:           data.Hash,
 		TxTime:         txTime,
@@ -137,5 +139,34 @@ func handlerRecordCoin(saver *DbSaver, version, txTime, sequenceNum int64, data 
 				Symbol:       change.Data.Data.Symbol,
 			})
 		}
+	}
+}
+
+func handlerCollection(saver *DbSaver, version, txTime, sequenceNum int64, data models.TransactionRsp) {
+	for _, event := range data.Events {
+		if event.Type != EventCollectionCreate {
+			continue
+		}
+		var cType string
+		cnum := event.Guid.CreationNumber
+		addr := event.Guid.AccountAddress
+		for _, c := range data.Changes {
+			if cnum == c.Data.Data.CreateCollectionEvent.Guid.ID.CreationNum && addr == c.Data.Data.CreateCollectionEvent.Guid.ID.Addr {
+				cType = c.Data.Type
+			}
+		}
+		saver.collection = append(saver.collection, &models.Collection{
+			Version:     version,
+			Hash:        data.Hash,
+			TxTime:      txTime,
+			Sender:      data.Sender,
+			Creator:     event.Data.Creator,
+			Name:        event.Data.CollectionName,
+			Description: event.Data.Description,
+			Uri:         event.Data.Uri,
+			Maximun:     event.Data.Maximum,
+			Type:        cType,
+		})
+
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	u "net/url"
 	"strings"
 
 	"github.com/Port3-Network/AptosParser/models"
@@ -17,7 +18,7 @@ type DbSaver struct {
 	payload     []*models.Payload
 	recordCoin  []*models.RecordCoin
 	historyCoin []*models.HistoryCoin
-	// recordToken  map[string]*models.RecordToken
+	collection  []*models.Collection
 }
 
 func NewDbSaver(height, block_ts uint64) *DbSaver {
@@ -28,8 +29,8 @@ func NewDbSaver(height, block_ts uint64) *DbSaver {
 		transaction: make([]*models.Transaction, 0),
 		payload:     make([]*models.Payload, 0),
 		recordCoin:  make([]*models.RecordCoin, 0),
-		// recordToken:  make(map[string]*models.RecordToken),
 		historyCoin: make([]*models.HistoryCoin, 0),
+		collection:  make([]*models.Collection, 0),
 	}
 }
 
@@ -43,10 +44,6 @@ func (db *DbSaver) Commit() error {
 	}
 	defer oo.CloseSqlTxConn(dbConn, dbTx, &err)
 
-	if err := db.doCommitSyncHeight(dbTx); err != nil {
-		oo.LogD("doCommitSyncHeight %v", err)
-		return err
-	}
 	if err := db.doCommitBlock(dbTx); err != nil {
 		oo.LogD("doCommitBlock %v", err)
 		return err
@@ -65,6 +62,14 @@ func (db *DbSaver) Commit() error {
 	}
 	if err := db.doCommitHistoryCoin(dbTx); err != nil {
 		oo.LogD("doCommitHistoryToken %v", err)
+		return err
+	}
+	if err := db.doCommitCollection(dbTx); err != nil {
+		oo.LogD("doCommitCollection %v", err)
+		return err
+	}
+	if err := db.doCommitSyncHeight(dbTx); err != nil {
+		oo.LogD("doCommitSyncHeight %v", err)
 		return err
 	}
 	return nil
@@ -161,16 +166,22 @@ func (db *DbSaver) doCommitHistoryCoin(tx *sql.Tx) (err error) {
 	return nil
 }
 
-func (db *DbSaver) AddBlock(block *models.Block) {
-	db.block = append(db.block, block)
-}
+func (db *DbSaver) doCommitCollection(tx *sql.Tx) (err error) {
+	if len(db.collection) == 0 {
+		return nil
+	}
 
-func (db *DbSaver) AddTransaction(transaction *models.Transaction) {
-	db.transaction = append(db.transaction, transaction)
-}
-
-func (db *DbSaver) AddPayload(payload *models.Payload) {
-	db.payload = append(db.payload, payload)
+	var vals []string
+	for _, collection := range db.collection {
+		v := fmt.Sprintf("(%d,'%s',%d,'%s','%s','%s','%s','%s','%s','%s')",
+			collection.Version, collection.Hash, collection.TxTime, collection.Sender, collection.Creator, u.QueryEscape(collection.Name), u.QueryEscape(collection.Description), u.QueryEscape(collection.Uri), collection.Maximun, collection.Type)
+		vals = append(vals, v)
+	}
+	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sender,creator,name,description,uri,maximun,type) VALUES %s`, models.TableCollection, strings.Join(vals, ","))
+	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (db *DbSaver) HandlerAddRecordToken(resource string, data *models.RecordCoin) {
