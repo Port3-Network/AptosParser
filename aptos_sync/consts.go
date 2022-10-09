@@ -14,10 +14,14 @@ const (
 	ActionBurn     = 2
 	ActionTransfer = 3
 
-	TypeCallFunction      = "entry_function_payload"
-	EventWithdraw         = "0x1::coin::WithdrawEvent"
-	EventDeposit          = "0x1::coin::DepositEvent"
+	TypeCallFunction = "entry_function_payload"
+	EventWithdraw    = "0x1::coin::WithdrawEvent" // -
+	EventDeposit     = "0x1::coin::DepositEvent"  // +
+
 	EventCollectionCreate = "0x3::token::CreateCollectionEvent"
+	EventTokenCreate      = "0x3::token::CreateTokenDataEvent"
+	EventTokenDeposit     = "0x3::token::DepositEvent"  // +
+	EventTokenWithdraw    = "0x3::token::WithdrawEvent" // -
 
 	FunctionPublishPkg      = "0x1::code::publish_package_txn"
 	FunctionMint            = "0x1::managed_coin::mint"

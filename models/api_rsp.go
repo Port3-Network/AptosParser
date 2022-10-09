@@ -53,6 +53,7 @@ type ChangeDataSubD struct {
 	WithdrawEvent         ChangeDataEvent `json:"withdraw_events"`
 	DepositEvent          ChangeDataEvent `json:"deposit_events"`
 	CreateCollectionEvent ChangeDataEvent `json:"create_collection_events"`
+	CreateTokenDataEvent  ChangeDataEvent `json:"create_token_data_events"`
 }
 
 type ChangeDataEvent struct {
@@ -83,12 +84,25 @@ type TxEvent struct {
 }
 
 type EventData struct {
-	Amount         string `json:"amount"`
-	CollectionName string `json:"collection_name"`
-	Creator        string `json:"creator"`
-	Description    string `json:"description"`
-	Maximum        string `json:"maximum"`
-	Uri            string `json:"uri"`
+	Amount         string      `json:"amount"`
+	CollectionName string      `json:"collection_name"`
+	Name           string      `json:"name"`
+	Creator        string      `json:"creator"`
+	Description    string      `json:"description"`
+	Maximum        string      `json:"maximum"`
+	Uri            string      `json:"uri"`
+	Id             EventDataId `json:"id"`
+}
+
+type EventDataId struct {
+	EventTokenDataId
+	TokenDataId EventTokenDataId `json:"token_data_id"`
+}
+
+type EventTokenDataId struct {
+	Collection string `json:"collection"`
+	Creator    string `json:"creator"`
+	Name       string `json:"name"`
 }
 
 type EventGuid struct {
