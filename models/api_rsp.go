@@ -109,3 +109,16 @@ type EventGuid struct {
 	CreationNumber string `json:"creation_number"`
 	AccountAddress string `json:"account_address"`
 }
+
+type ResourceRsp struct {
+	Type string       `json:"type"`
+	Data ResourceData `json:"data"`
+}
+
+type ResourceData struct {
+	Coin CoinValue `json:"coin"`
+}
+
+type CoinValue struct {
+	Value string `json:"value"`
+}

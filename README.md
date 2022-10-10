@@ -1,6 +1,7 @@
 # Port3-Network parse
 
 ## [sync's deploy documentation](./SyncDeploy.md)
+## [api's deploy documentation](./ApiDeploy.md)
 ## Coin, event flag: 0x1::coin
 
 #### call function:

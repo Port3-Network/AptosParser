@@ -27,17 +27,12 @@ type BlockData struct {
 	LastVersion  string `json:"last_version"`
 }
 
-// GetBlocks
-//
+// @Tags Tx
 // @Summary get block list
-// @Id blocks
 // @Description event = blocks
-// @Tags Block
-// @Accept json
-// @Produce json
-// @Param request body BlocksReq true "request"
+// @Param body query BlocksReq true "request"
 // @Success 200 {object} BlocksRsp
-// @Router /blocks [get]
+// @Router /v1/blocks [get]
 func GetBlocks(c *gin.Context) {
 	appC := Context{C: c}
 	req, rsp := &BlocksReq{}, &BlocksRsp{}
@@ -107,25 +102,20 @@ type UserTransactionsRsp struct {
 
 type UserTransactionJson struct {
 	Id       int64  `json:"id"`
-	Version  int64  `json:"version"`
+	Version  string `json:"version"`
 	Hash     string `json:"hash"`
 	TxTime   int64  `json:"tx_time"`
 	Success  bool   `json:"success"`
 	Sender   string `json:"sender"`
-	Receiver string `json:"receiver"`
+	Function string `json:"function"`
 }
 
-// GetUserTransactions
-//
+// @Tags Tx
 // @Summary get tx detail
-// @Id transactions
 // @Description event = transactions
-// @Tags Transaction
-// @Accept json
-// @Produce json
-// @Param request body UserTransactionsReq true "request"
+// @Param body query UserTransactionsReq true "request"
 // @Success 200 {object} UserTransactionsRsp
-// @Router /user_transactions [get]
+// @Router /v1/user_transactions [get]
 func GetTransactions(c *gin.Context) {
 	appC := Context{C: c}
 	req, rsp := &UserTransactionsReq{}, &UserTransactionsRsp{}
@@ -141,15 +131,25 @@ func GetTransactions(c *gin.Context) {
 		return
 	}
 
-	var data []models.Transaction
-	sqler := oo.NewSqler().Table(models.TableTransaction).
+	var data []struct {
+		Id       int64  `json:"id"`
+		Version  string `json:"version"`
+		Hash     string `json:"hash"`
+		TxTime   int64  `json:"tx_time"`
+		Success  bool   `json:"success"`
+		Sender   string `json:"sender"`
+		CallFunc string `json:"call_func"`
+	}
+
+	sqler := oo.NewSqler().Table(models.TableTransaction+" AS t").
+		LeftJoin(models.TablePayload+" AS p", "p.hash=t.hash").
 		Order("version DESC").
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset))
 	if req.Version != "" {
 		sqler.Where("version", req.Version)
 	}
-	sqlStr := sqler.Select("*")
+	sqlStr := sqler.Select("t.id,t.version,t.hash,t.tx_time,t.success,t.sender,p.payload_func AS call_func")
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
@@ -164,7 +164,7 @@ func GetTransactions(c *gin.Context) {
 			TxTime:   v.TxTime,
 			Success:  v.Success,
 			Sender:   v.Sender,
-			Receiver: v.Receiver,
+			Function: v.CallFunc,
 		})
 	}
 

@@ -4,6 +4,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	_ "github.com/Port3-Network/AptosParser/aptos_api/docs"
+
+	swaggerFiles "github.com/swaggo/files"
+	swagger "github.com/swaggo/gin-swagger"
 )
 
 const (
@@ -40,9 +45,11 @@ func InitAPIRouter() *gin.Engine {
 	}
 
 	r := gin.New()
+
 	if GDatabase.EnableDebug {
 		r.Use(gin.Logger())
 		r.Use(gin.Recovery())
+		r.GET("/swagger/*any", swagger.WrapHandler(swaggerFiles.Handler))
 	}
 
 	r.Use(Cros())
@@ -50,9 +57,12 @@ func InitAPIRouter() *gin.Engine {
 	{
 		v1Group.GET("/blocks", GetBlocks)
 		v1Group.GET("/user_transactions", GetTransactions)
-		v1Group.GET("/token_inventory", GetTokenInventory)
-		v1Group.GET("/token_transactions", GetTokenTransactions)
-		v1Group.GET("/get_token_action", GetTokenAction)
+
+		v1Group.GET("/coin_inventory", GetCoinInventory)
+		v1Group.GET("/coin_transactions", GetCoinTransactions)
+
+		v1Group.GET("/get_address_action", GetAddressAction)
+		v1Group.GET("/get_address_amount", GetAddressAmount)
 	}
 
 	return r

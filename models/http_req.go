@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// func HttpGet(url string, timeout int64) (data interface{}, err error) {
 func HttpGet(url string, timeout int64) (data []byte, err error) {
 	if len(url) <= 0 {
 		return nil, errors.Wrap(err, "empty uri error")
