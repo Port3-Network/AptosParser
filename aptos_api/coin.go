@@ -10,140 +10,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type GetActionReq struct {
-	Address   string `form:"address"`
-	Resource  string `form:"resource"`
-	StartTime int64  `form:"start_time"`
-	EndTime   int64  `form:"end_time"`
-	Offset    int64  `form:"offset" json:"offset" validate:"gte=0"`
-	PageSize  int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
-}
-
-type GetActionRsp struct {
-	List  []ActionData `json:"list"`
-	Total int64        `json:"total"`
-}
-
-type ActionData struct {
-	Version  string `json:"version"`
-	Hash     string `json:"hash"`
-	TxTime   int64  `json:"tx_time"`
-	Sender   string `json:"sender"`
-	FuncName string `json:"function_name"`
-	Resource string `json:"resource"`
-}
-
-// GetTokenAction
-//
-// @Summary get user action
-// @Id GetTokenAction
-// @Description event = blocks
-// @Tags Block
-// @Accept json
-// @Produce json
-// @Param request body GetActionReq true "request"
-// @Success 200 {object} GetActionRsp
-// @Router /get_token_action [get]
-func GetTokenAction(c *gin.Context) {
-	appC := Context{C: c}
-	req, rsp := &GetActionReq{}, &GetActionRsp{}
-	err := c.ShouldBindQuery(&req)
-	if err != nil {
-		oo.LogD("%s: ShouldBindQuery err, msg: %v", c.FullPath(), err)
-		appC.ResponseInvalidParam()
-		return
-	}
-	if err = oo.ValidateStruct(req); err != nil {
-		oo.LogD("%s: Check para err %v", c.FullPath(), err)
-		appC.ResponseInvalidParam()
-		return
-	}
-	var data []struct {
-		Version  string         `db:"version"`
-		Hash     string         `db:"hash"`
-		TxTime   int64          `db:"tx_time"`
-		Sender   string         `db:"sender"`
-		FuncName string         `db:"function_name"`
-		Resource sql.NullString `db:"resource"`
-	}
-
-	sqler := oo.NewSqler().Table(models.TablePayload+" AS p").
-		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version").
-		Limit(int(req.PageSize)).
-		Offset(int(req.Offset)).
-		Order("p.tx_time DESC")
-
-	if req.Address != "" {
-		sqler.Where("p.sender", req.Address)
-	}
-	if req.Resource != "" {
-		sqler.Where("h.resource", req.Resource)
-	}
-	if req.StartTime != 0 {
-		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
-		sqler.Where(startWhere)
-	}
-	if req.EndTime != 0 {
-		endWhere := fmt.Sprintf("p.tx_time <= %d", req.EndTime*1000)
-		sqler.Where(endWhere)
-	}
-	sqlStr1 := sqler.Select("p.version,p.hash,p.tx_time,p.sender,p.payload_func AS function_name,h.resource")
-	if err = oo.SqlSelect(sqlStr1, &data); err != nil {
-		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
-		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
-		return
-	}
-	for _, v := range data {
-		rsp.List = append(rsp.List, ActionData{
-			Version:  v.Version,
-			Hash:     v.Hash,
-			TxTime:   v.TxTime,
-			Sender:   v.Sender,
-			FuncName: v.FuncName,
-			Resource: v.Resource.String,
-		})
-	}
-
-	sqler2 := oo.NewSqler().Table(models.TablePayload+" AS p").
-		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version")
-
-	if req.Address != "" {
-		sqler.Where("p.sender", req.Address)
-	}
-	if req.Resource != "" {
-		sqler.Where("h.resource", req.Resource)
-	}
-	if req.StartTime != 0 {
-		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
-		sqler.Where(startWhere)
-	}
-	if req.EndTime != 0 {
-		endWhere := fmt.Sprintf("p.tx_time <= %d", req.EndTime*1000)
-		sqler.Where(endWhere)
-	}
-	sqlStr2 := sqler2.Select("COUNT(*) AS total")
-
-	if err = oo.SqlGet(sqlStr2, &rsp.Total); err != nil {
-		oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
-		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
-		return
-	}
-	appC.Response(http.StatusOK, SUCCESS, rsp)
-}
-
-type TokenInventoryReq struct {
+type CoinInventoryReq struct {
 	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`
 	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
 	Resource string `form:"resource" json:"resource" validate:"omitempty"`
 	Address  string `form:"address" json:"address" validate:"omitempty"`
 }
 
-type TokenInventoryRsp struct {
-	List  []TokenInventoryJson `json:"list"`
-	Total int64                `json:"total"`
+type CoinInventoryRsp struct {
+	List  []CoinInventoryJson `json:"list"`
+	Total int64               `json:"total"`
 }
 
-type TokenInventoryJson struct {
+type CoinInventoryJson struct {
 	Name         string `json:"name"`
 	Symbol       string `json:"symbol"`
 	ModuleName   string `json:"moduleName"`
@@ -152,19 +31,15 @@ type TokenInventoryJson struct {
 	Owner        string `json:"owner"`
 }
 
-// GetTokenInventory
+// @Tags Coin
 // @Summary get token inventory list
-// @Id TokenInventory
 // @Description event = TokenInventory
-// @Tags Token
-// @Accept json
-// @Produce json
-// @Param request body TokenInventoryReq true "request"
-// @Success 200 {object} TokenInventoryRsp
-// @Router /token_inventory [get]
-func GetTokenInventory(c *gin.Context) {
+// @Param body query CoinInventoryReq true "request"
+// @Success 200 {object} CoinInventoryRsp
+// @Router /v1/coin_inventory [get]
+func GetCoinInventory(c *gin.Context) {
 	appC := Context{C: c}
-	req, rsp := &TokenInventoryReq{}, TokenInventoryRsp{}
+	req, rsp := &CoinInventoryReq{}, CoinInventoryRsp{}
 	err := c.ShouldBindQuery(&req)
 	if err != nil {
 		oo.LogD("%s: ShouldBindQuery err, msg: %v", c.FullPath(), err)
@@ -204,7 +79,7 @@ func GetTokenInventory(c *gin.Context) {
 	}
 
 	for _, v := range data {
-		rsp.List = append(rsp.List, TokenInventoryJson{
+		rsp.List = append(rsp.List, CoinInventoryJson{
 			Name:         v.Name,
 			Symbol:       v.Symbol,
 			ModuleName:   v.ModuleName,
@@ -231,14 +106,14 @@ func GetTokenInventory(c *gin.Context) {
 	appC.Response(http.StatusOK, SUCCESS, rsp)
 }
 
-type HistoryTokenReq struct {
+type HistoryCoinReq struct {
 	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`
 	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
 	Resource string `form:"resource" json:"contract" validate:"omitempty"`
 	Address  string `form:"address" json:"address" validate:"omitempty"`
 }
 
-type HistoryTokenRsp struct {
+type HistoryCoinRsp struct {
 	List  []HistoryTokenJson `json:"list"`
 	Total int64              `json:"total"`
 }
@@ -256,19 +131,15 @@ type HistoryTokenJson struct {
 	FuncName string `json:"func_name"`
 }
 
-// GetTokenTransactions
+// @Tags Coin
 // @Summary get token tx list
-// @Id tokenTransactions
 // @Description event = tokenTransactions
-// @Tags Token
-// @Accept json
-// @Produce json
-// @Param request body HistoryTokenReq true "request"
-// @Success 200 {object} HistoryTokenRsp
-// @Router /token_transactions [get]
-func GetTokenTransactions(c *gin.Context) {
+// @Param body query HistoryCoinReq true "request"
+// @Success 200 {object} HistoryCoinRsp
+// @Router /v1/coin_transactions [get]
+func GetCoinTransactions(c *gin.Context) {
 	appC := Context{C: c}
-	req, rsp := &HistoryTokenReq{}, &HistoryTokenRsp{}
+	req, rsp := &HistoryCoinReq{}, &HistoryCoinRsp{}
 	err := c.ShouldBindQuery(&req)
 	if err != nil {
 		oo.LogD("%s: ShouldBindQuery err, msg: %v", c.FullPath(), err)

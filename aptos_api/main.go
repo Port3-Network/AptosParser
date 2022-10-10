@@ -14,15 +14,14 @@ import (
 )
 
 type DataBase struct {
-	TxRpcUrl     []string `toml:"TX_RPC_URL,omitzero"`
-	TxGraphqlUrl []string `toml:"TX_GRAPHQL_URL,omitzero"`
-	User         string   `toml:"USER,omitzero"`
-	Password     string   `toml:"PASSWORD,omitzero"`
-	Host         string   `toml:"HOST,omitzero"`
-	Port         int32    `toml:"PORT,omitzero"`
-	Name         string   `toml:"NAME,omitzero"`
-	ApiPort      int64    `toml:"API_PORT,omitzero"`
-	EnableDebug  bool     `toml:"ENABLE_DEBUG,omitempry"`
+	TxRpcUrl    string `toml:"TX_RPC_URL,omitzero"`
+	User        string `toml:"USER,omitzero"`
+	Password    string `toml:"PASSWORD,omitzero"`
+	Host        string `toml:"HOST,omitzero"`
+	Port        int32  `toml:"PORT,omitzero"`
+	Name        string `toml:"NAME,omitzero"`
+	ApiPort     int64  `toml:"API_PORT,omitzero"`
+	EnableDebug bool   `toml:"ENABLE_DEBUG,omitempry"`
 }
 
 var (
