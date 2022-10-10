@@ -48,7 +48,7 @@ DROP TABLE IF EXISTS `transaction`;
 
 CREATE TABLE `transaction` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
-    `version` bigint NOT NULL COMMENT '',
+    `version` char(32) NOT NULL COMMENT 'tx version',
     `hash` char(66) NOT NULL COMMENT 'tx hash',
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `success` tinyint NOT NULL DEFAULT 0 COMMENT 'vm state',
@@ -76,7 +76,7 @@ DROP TABLE IF EXISTS `payload`;
 
 CREATE TABLE `payload` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
-    `version` bigint NOT NULL COMMENT 'tx version',
+    `version` char(32) NOT NULL COMMENT 'tx version',
     `hash` char(66) NOT NULL COMMENT 'tx hash',
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sequence_number` int NOT NULL COMMENT 'sequence_number',
@@ -89,14 +89,14 @@ CREATE TABLE `payload` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
 
 -- ----------------------------
--- Table record_token -> publish pkg record
+-- Table record_coin -> publish pkg record
 -- ----------------------------
 DROP TABLE IF EXISTS `record_coin`;
 
 -- resource = sender::module_name::contract_name
 CREATE TABLE `record_coin` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
-    `version` bigint NOT NULL COMMENT 'tx version',
+    `version` char(32) NOT NULL COMMENT 'tx version',
     `hash` char(66) NOT NULL COMMENT 'tx hash',
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sender` char(66) NOT NULL DEFAULT '' COMMENT 'tx sender',
@@ -118,7 +118,7 @@ DROP TABLE IF EXISTS `history_coin`;
 
 CREATE TABLE `history_coin` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
-    `version` bigint NOT NULL COMMENT 'tx version',
+    `version` char(32) NOT NULL COMMENT 'tx version',
     `hash` char(66) NOT NULL COMMENT 'tx hash',
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sender` char(66) NOT NULL COMMENT 'tx sender',
@@ -133,4 +133,100 @@ CREATE TABLE `history_coin` (
     KEY `version` (`version`),
     KEY `index_sender_receiver` (`sender`, `receiver`),
     KEY `index_time` (`tx_time`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+
+-- ----------------------------
+-- Table collection -> collection
+-- ----------------------------
+DROP TABLE IF EXISTS `collection`;
+
+-- resource = sender::module_name::contract_name
+CREATE TABLE `collection` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
+    `version` char(32) NOT NULL COMMENT 'tx version',
+    `hash` char(66) NOT NULL COMMENT 'tx hash',
+    `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
+    `sender` char(66) NOT NULL DEFAULT '' COMMENT 'tx sender',
+    `creator` char(66) NOT NULL DEFAULT '' COMMENT 'collection owner',
+    `name` char(66) NOT NULL DEFAULT '' COMMENT 'collection name',
+    `description` text NOT NULL DEFAULT '' COMMENT 'collection description',
+    `uri` text NOT NULL DEFAULT '' COMMENT 'collection uri',
+    `maximum` char(128) NOT NULL DEFAULT '' COMMENT 'collection maximum',
+    `type` char(128) NOT NULL DEFAULT '' COMMENT 'collection type',
+    `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+
+-- ----------------------------
+-- Table record_token -> publish pkg record
+-- ----------------------------
+DROP TABLE IF EXISTS `record_token`;
+
+-- resource = sender::module_name::contract_name
+CREATE TABLE `record_token` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
+    `version` char(32) NOT NULL COMMENT 'tx version',
+    `hash` char(66) NOT NULL COMMENT 'tx hash',
+    `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
+    `sender` char(66) NOT NULL DEFAULT '' COMMENT 'tx sender',
+    `creator` char(66) NOT NULL DEFAULT '' COMMENT 'token creator',
+    `collection` char(255) NOT NULL DEFAULT '' COMMENT 'collection',
+    `name` char(255) NOT NULL DEFAULT '' COMMENT 'token name',
+    `description` text NOT NULL DEFAULT '' COMMENT 'token description',
+    `uri` text NOT NULL DEFAULT '' COMMENT 'token uri',
+    `maximum` char(128) NOT NULL DEFAULT '' COMMENT 'collection maximum',
+    `type` char(128) NOT NULL DEFAULT '' COMMENT 'collection type',
+    `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `token_data` (`creator`, `collection`, `name`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+
+-- ----------------------------
+-- Table asset_token -> owner of each nft
+-- ----------------------------
+DROP TABLE IF EXISTS `asset_token`;
+
+-- resource = sender::module_name::contract_name
+CREATE TABLE `asset_token` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
+    `version` char(32) NOT NULL COMMENT 'tx version',
+    `hash` char(66) NOT NULL COMMENT 'tx hash',
+    `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
+    `owner` char(66) NOT NULL DEFAULT '' COMMENT 'owner',
+    `creator` char(66) NOT NULL DEFAULT '' COMMENT 'token creator',
+    `collection` char(255) NOT NULL DEFAULT '' COMMENT 'collection',
+    `name` char(255) NOT NULL DEFAULT '' COMMENT 'token name',
+    `amount` char(66) NOT NULL DEFAULT '' COMMENT 'nft amount',
+    `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `owner_token_data` (`owner`, `creator`, `collection`, `name`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+
+-- ----------------------------
+-- Table history_token -> token transfer histories
+-- ----------------------------
+DROP TABLE IF EXISTS `history_token`;
+
+CREATE TABLE `history_token` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
+    `version` char(32) NOT NULL COMMENT 'tx version',
+    `hash` char(66) NOT NULL COMMENT 'tx hash',
+    `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
+    `sender` char(66) NOT NULL COMMENT 'tx sender',
+    `receiver` char(66) NOT NULL COMMENT 'tx receiver',
+    `creator` char(66) NOT NULL DEFAULT '' COMMENT 'token creator',
+    `collection` char(255) NOT NULL DEFAULT '' COMMENT 'collection',
+    `name` char(255) NOT NULL DEFAULT '' COMMENT 'token name',
+    `amount` varchar(66) NOT NULL COMMENT 'nft amount',
+    `action` tinyint NOT NULL COMMENT '0: unknow, 1: mint, 2: transfer, 3:burn',
+    `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `hash` (`hash`),
+    KEY `index_sender_receiver` (`sender`, `receiver`),
+    KEY `index_time` (`tx_time`),
+    KEY `token_data` (`creator`, `collection`, `name`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
