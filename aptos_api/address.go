@@ -13,26 +13,26 @@ import (
 )
 
 type GetActionReq struct {
-	Address   string `form:"address"`
-	Resource  string `form:"resource"`
-	StartTime int64  `form:"startTime"`
-	EndTime   int64  `form:"endTime"`
-	Offset    int64  `form:"offset" json:"offset" validate:"gte=0"`
-	PageSize  int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
+	Address   string `form:"address"`                                  // optional, user address
+	Resource  string `form:"resource"`                                 // optional, resource name
+	StartTime int64  `form:"startTime"`                                // optional, begin time
+	EndTime   int64  `form:"endTime"`                                  // optional, end time
+	Offset    int64  `form:"offset" json:"offset" validate:"gte=0"`    // required, data offset
+	PageSize  int64  `form:"pageSize" json:"pageSize" validate:"gt=0"` // required, number of data a time
 }
 
 type GetActionRsp struct {
-	List  []ActionData `json:"list"`
-	Total int64        `json:"total"`
+	List  []ActionData `json:"list"`  // data list
+	Total int64        `json:"total"` // total num
 }
 
 type ActionData struct {
-	Version  string `json:"version"`
-	Hash     string `json:"hash"`
-	TxTime   int64  `json:"tx_time"`
-	Sender   string `json:"sender"`
-	FuncName string `json:"function_name"`
-	Resource string `json:"resource"`
+	Version  string `json:"version"`       // tx version
+	Hash     string `json:"hash"`          // tx hash
+	TxTime   int64  `json:"tx_time"`       // tx timestamp
+	Sender   string `json:"sender"`        // tx sender
+	FuncName string `json:"function_name"` // call function
+	Resource string `json:"resource"`      // which resource
 }
 
 // @Tags Address
@@ -129,12 +129,12 @@ func GetAddressAction(c *gin.Context) {
 }
 
 type GetAmountReq struct {
-	Address  string `form:"address"`
-	Resource string `form:"resource"`
+	Address  string `form:"address"`  // user address
+	Resource string `form:"resource"` // which resource, default 0x1::aptos_coin::AptosCoin
 }
 
 type GetAmountRsp struct {
-	Amount string `json:"amount"`
+	Amount string `json:"amount"` // amount
 }
 
 // @Tags Address
@@ -159,6 +159,7 @@ func GetAddressAmount(c *gin.Context) {
 	}
 
 	rsp.Amount = "0"
+	// call api
 	res, err := GetAccountResource(req.Address)
 	if err != nil {
 		oo.LogD("%s: GetAccountResource err %v", c.FullPath(), err)
@@ -210,6 +211,18 @@ type Contract struct {
 }
 
 func ParseType(e string) *Contract {
+	// parse string to struct
+	// 0x1::coin::CoinStore<0xa1dffeb39031fbab2ae3cbbd2c59fcfcca1cd2eb3b80f521974d38e3de0c96e6::moon_coin::MoonCoin>
+	/*
+		cc := &Contract{
+			Type:     "0x1::coin::CoinStore",
+			Address:  "0xa1dffeb39031fbab2ae3cbbd2c59fcfcca1cd2eb3b80f521974d38e3de0c96e6",
+			Module:   "moon_coin",
+			Name:     "MoonCoin",
+			Resource: "0xa1dffeb39031fbab2ae3cbbd2c59fcfcca1cd2eb3b80f521974d38e3de0c96e6::moon_coin::MoonCoin",
+		}
+	*/
+
 	c := &Contract{}
 	es := strings.Replace(strings.Replace(e, "<", "-", 1), ">", "", 1)
 	psType := strings.Split(es, "-")

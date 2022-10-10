@@ -9,22 +9,22 @@ import (
 )
 
 type BlocksReq struct {
-	Height   int64 `form:"height" validate:"gte=0"`
-	Offset   int64 `form:"offset" json:"offset" validate:"gte=0"`
-	PageSize int64 `form:"pageSize" json:"pageSize" validate:"gt=0"`
+	Height   int64 `form:"height" validate:"gte=0"`                  // optional, block num
+	Offset   int64 `form:"offset" json:"offset" validate:"gte=0"`    // required, data offset
+	PageSize int64 `form:"pageSize" json:"pageSize" validate:"gt=0"` // required, number of data a time
 }
 
 type BlocksRsp struct {
-	List  []BlockData `json:"list"`
-	Total int64       `json:"total"`
+	List  []BlockData `json:"list"`  // data list
+	Total int64       `json:"total"` // total num
 }
 
 type BlockData struct {
-	Height       int64  `json:"height"`
-	Hash         string `json:"hash"`
-	TxTime       int64  `json:"tx_time"`
-	FirstVersion string `json:"first_version"`
-	LastVersion  string `json:"last_version"`
+	Height       int64  `json:"height"`        // block height
+	Hash         string `json:"hash"`          // block hash
+	TxTime       int64  `json:"tx_time"`       // block timestamp
+	FirstVersion string `json:"first_version"` // the first version of this block
+	LastVersion  string `json:"last_version"`  // the last version of this block
 }
 
 // @Tags Tx
@@ -58,6 +58,8 @@ func GetBlocks(c *gin.Context) {
 		sqler.Where("height", req.Height)
 	}
 	sqlStr := sqler.Select("*")
+
+	// call mysql -> oo.SqlSelect use *sqlx.DB.Select
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
@@ -79,6 +81,7 @@ func GetBlocks(c *gin.Context) {
 	if req.Height > 0 {
 		sqler2.Where("height", req.Height)
 	}
+	// call mysql -> oo.sqlGet use *sqlx.DB.Get
 	sqlStr2 := sqler2.Select("COUNT(*) AS total")
 	if err = oo.SqlGet(sqlStr2, &rsp.Total); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
@@ -90,28 +93,28 @@ func GetBlocks(c *gin.Context) {
 }
 
 type UserTransactionsReq struct {
-	Version  string `form:"version" validate:"omitempty"`
-	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`
-	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
+	Version  string `form:"version" validate:"omitempty"`             // optional, version num
+	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`    // required, data offset
+	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"` // required, number of data a time
 }
 
 type UserTransactionsRsp struct {
-	List  []UserTransactionJson `json:"list"`
-	Total int64                 `json:"total"`
+	List  []UserTransactionJson `json:"list"`  // data list
+	Total int64                 `json:"total"` // total num
 }
 
 type UserTransactionJson struct {
 	Id       int64  `json:"id"`
-	Version  string `json:"version"`
-	Hash     string `json:"hash"`
-	TxTime   int64  `json:"tx_time"`
-	Success  bool   `json:"success"`
-	Sender   string `json:"sender"`
-	Function string `json:"function"`
+	Version  string `json:"version"`  // tx version
+	Hash     string `json:"hash"`     // tx hash
+	TxTime   int64  `json:"tx_time"`  // tx timestamp
+	Success  bool   `json:"success"`  // tx status, just success
+	Sender   string `json:"sender"`   // tx sender
+	Function string `json:"function"` // call function
 }
 
 // @Tags Tx
-// @Summary get tx detail
+// @Summary get tx list
 // @Description event = transactions
 // @Param body query UserTransactionsReq true "request"
 // @Success 200 {object} UserTransactionsRsp
