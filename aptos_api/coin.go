@@ -11,24 +11,24 @@ import (
 )
 
 type CoinInventoryReq struct {
-	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`
-	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
-	Resource string `form:"resource" json:"resource" validate:"omitempty"`
-	Address  string `form:"address" json:"address" validate:"omitempty"`
+	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`         // required, data offset
+	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`      // required, number of data a time
+	Resource string `form:"resource" json:"resource" validate:"omitempty"` // optional, resource str
+	Address  string `form:"address" json:"address" validate:"omitempty"`   // optional, user address
 }
 
 type CoinInventoryRsp struct {
-	List  []CoinInventoryJson `json:"list"`
-	Total int64               `json:"total"`
+	List  []CoinInventoryJson `json:"list"`  // data list
+	Total int64               `json:"total"` // total num
 }
 
 type CoinInventoryJson struct {
-	Name         string `json:"name"`
-	Symbol       string `json:"symbol"`
-	ModuleName   string `json:"moduleName"`
-	ContractName string `json:"contractName"`
-	Resource     string `json:"resource"`
-	Owner        string `json:"owner"`
+	Name         string `json:"name"`         // coin name
+	Symbol       string `json:"symbol"`       // coin symbol
+	ModuleName   string `json:"moduleName"`   // coin module
+	ContractName string `json:"contractName"` // coin sub name
+	Resource     string `json:"resource"`     // resource name -> 0x1::module::contract
+	Owner        string `json:"owner"`        // coin owner
 }
 
 // @Tags Coin
@@ -60,7 +60,7 @@ func GetCoinInventory(c *gin.Context) {
 		Resource     string `db:"resource"`
 		Owner        string `db:"sender"`
 	}
-
+	// query list
 	sqler := oo.NewSqler().Table(models.TableRecordCoin).
 		Order("id DESC").
 		Limit(int(req.PageSize)).
@@ -72,6 +72,8 @@ func GetCoinInventory(c *gin.Context) {
 		sqler.Where("resource", req.Address)
 	}
 	sqlStr := sqler.Select("name,symbol,module_name,contract_name,resource,sender")
+
+	// call mysql -> oo.SqlSelect use *sqlx.DB.Select
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
@@ -89,6 +91,7 @@ func GetCoinInventory(c *gin.Context) {
 		})
 	}
 
+	// count
 	sqler2 := oo.NewSqler().Table(models.TableRecordCoin)
 	if req.Resource != "" {
 		sqler2.Where("resource", req.Resource)
@@ -98,37 +101,39 @@ func GetCoinInventory(c *gin.Context) {
 	}
 	sqlStr2 := sqler2.Select("COUNT(*) AS total")
 
+	// call mysql -> oo.sqlGet use *sqlx.DB.Get
 	if err := oo.SqlGet(sqlStr2, &rsp.Total); err != nil {
 		oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
 		return
 	}
+
 	appC.Response(http.StatusOK, SUCCESS, rsp)
 }
 
 type HistoryCoinReq struct {
-	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`
-	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`
-	Resource string `form:"resource" json:"contract" validate:"omitempty"`
-	Address  string `form:"address" json:"address" validate:"omitempty"`
+	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`         // required, data offset
+	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`      // required, number of data a time
+	Resource string `form:"resource" json:"contract" validate:"omitempty"` // optional, resource str
+	Address  string `form:"address" json:"address" validate:"omitempty"`   // optional, user address
 }
 
 type HistoryCoinRsp struct {
-	List  []HistoryTokenJson `json:"list"`
-	Total int64              `json:"total"`
+	List  []HistoryTokenJson `json:"list"`  // data list
+	Total int64              `json:"total"` // total num
 }
 
 type HistoryTokenJson struct {
-	Version  int64  `json:"version"`
-	Hash     string `json:"hash"`
-	TxTime   int64  `json:"tx_time"`
-	Sender   string `json:"sender"`
-	Receiver string `json:"receiver"`
-	Resource string `json:"resource"`
-	Name     string `json:"name"`
-	Symbol   string `json:"symbol"`
-	Amount   string `json:"amount"`
-	FuncName string `json:"func_name"`
+	Version  int64  `json:"version"`   // tx version
+	Hash     string `json:"hash"`      // tx hash
+	TxTime   int64  `json:"tx_time"`   // tx timestamp
+	Sender   string `json:"sender"`    // tx sender
+	Receiver string `json:"receiver"`  // tx receiver
+	Resource string `json:"resource"`  // which resource
+	Name     string `json:"name"`      // coin name
+	Symbol   string `json:"symbol"`    // coin symbol
+	Amount   string `json:"amount"`    // event amount
+	FuncName string `json:"func_name"` // call function
 }
 
 // @Tags Coin
