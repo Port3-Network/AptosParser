@@ -146,11 +146,11 @@ func GetTransactions(c *gin.Context) {
 
 	sqler := oo.NewSqler().Table(models.TableTransaction+" AS t").
 		LeftJoin(models.TablePayload+" AS p", "p.hash=t.hash").
-		Order("version DESC").
+		Order("t.tx_time DESC").
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset))
 	if req.Version != "" {
-		sqler.Where("version", req.Version)
+		sqler.Where("t.version", req.Version)
 	}
 	sqlStr := sqler.Select("t.id,t.version,t.hash,t.tx_time,t.success,t.sender,p.payload_func AS call_func")
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
