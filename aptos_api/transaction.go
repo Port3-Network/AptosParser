@@ -184,3 +184,40 @@ func GetTransactions(c *gin.Context) {
 	}
 	appC.Response(http.StatusOK, SUCCESS, rsp)
 }
+
+type SyncStatsRsp struct {
+	CurrentVersion string `json:"current_version"`
+}
+
+// @Tags Tx
+// @Summary get system stats
+// @Description event = current block stats of sync
+// @Success 200 {object} SyncStatsRsp
+// @Router /v1/stats [get]
+func GetStats(c *gin.Context) {
+	appC := Context{C: c}
+	rsp := &SyncStatsRsp{}
+	var err error
+	rsp.CurrentVersion, err = GetSysConfig(SyncLatestBlock)
+	if err != nil {
+		oo.LogD("%s: GetSyncBlockNum err, msg: %v", c.FullPath(), err)
+	}
+
+	appC.Response(http.StatusOK, SUCCESS, rsp)
+}
+
+func GetSysConfig(key string) (str string, err error) {
+	conn := GMysql.GetConn()
+	defer GMysql.UnGetConn(conn)
+
+	sqlstr := oo.NewSqler().Table(models.TableSysconfig).
+		Where("cfg_name", key).
+		Select("cfg_val")
+
+	err = conn.Get(&str, sqlstr)
+	if nil != err && oo.ErrNoRows != err {
+		err = oo.NewError("failed to sql[%s] err[%v]", sqlstr, err)
+		return
+	}
+	return
+}
