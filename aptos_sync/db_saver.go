@@ -18,13 +18,19 @@ type nftToken struct {
 	Name       string
 }
 
+type coinInfo struct {
+	Owner      string
+	ModuleName string
+	StructName string
+}
+
 type DbSaver struct {
 	height uint64
 
 	block        []*models.Block
 	transaction  []*models.Transaction
 	payload      []*models.Payload
-	recordCoin   []*models.RecordCoin
+	recordCoin   map[coinInfo]*models.RecordCoin
 	historyCoin  []*models.HistoryCoin
 	collection   []*models.Collection
 	recordToken  []*models.RecordToken
@@ -39,7 +45,7 @@ func NewDbSaver(height, block_ts uint64) *DbSaver {
 		block:        make([]*models.Block, 0),
 		transaction:  make([]*models.Transaction, 0),
 		payload:      make([]*models.Payload, 0),
-		recordCoin:   make([]*models.RecordCoin, 0),
+		recordCoin:   make(map[coinInfo]*models.RecordCoin),
 		historyCoin:  make([]*models.HistoryCoin, 0),
 		collection:   make([]*models.Collection, 0),
 		recordToken:  make([]*models.RecordToken, 0),
@@ -161,15 +167,44 @@ func (db *DbSaver) doCommitRecordCoin(tx *sql.Tx) (err error) {
 	if len(db.recordCoin) == 0 {
 		return nil
 	}
-	var vals []string
 	for _, record := range db.recordCoin {
-		v := fmt.Sprintf("('%s','%s',%d,'%s','%s','%s','%s','%s','%s')",
-			record.Version, record.Hash, record.TxTime, record.Sender, record.ModuleName, record.ContractName, record.Resource, record.Name, record.Symbol)
-		vals = append(vals, v)
-	}
-	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sender,module_name,contract_name,resource,name,symbol) VALUES %s`, models.TableRecordCoin, strings.Join(vals, ","))
-	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
-		return err
+		var recordCoin models.RecordCoin
+		sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
+			Where("resource", record.Resource).Select("*")
+		err := oo.SqlGet(sqlStr, &recordCoin)
+		if err != nil && err != oo.ErrNoRows {
+			return err
+		}
+		if err == oo.ErrNoRows {
+			sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
+				Insert(map[string]interface{}{
+					"version":       record.Version,
+					"hash":          record.Hash,
+					"tx_time":       record.TxTime,
+					"sender":        record.Sender,
+					"module_name":   record.ModuleName,
+					"contract_name": record.ContractName,
+					"resource":      record.Resource,
+					"name":          record.Name,
+					"symbol":        record.Symbol,
+				})
+			if err := oo.SqlTxExec(tx, sqlStr); err != nil {
+				return err
+			}
+		} else {
+			sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
+				Where("resource", record.Resource).
+				Update(map[string]interface{}{
+					"version": record.Version,
+					"hash":    record.Hash,
+					"tx_time": record.TxTime,
+					"name":    record.Name,
+					"symbol":  record.Symbol,
+				})
+			if err := oo.SqlTxExec(tx, sqlStr); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

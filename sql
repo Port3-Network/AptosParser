@@ -1,7 +1,7 @@
 DROP DATABASE IF EXISTS aptos_sync_full_testnet;
 CREATE DATABASE IF NOT EXISTS aptos_sync_full_testnet;
 USE aptos_sync_full_testnet;
-SET sql_mode="NO_ENGINE_SUBSTITUTION";
+SET sql_mode="modes,NO_ENGINE_SUBSTITUTION";
 
 -- NOTE: aptos address length -> 66
 -- ----------------------------
@@ -106,9 +106,9 @@ CREATE TABLE `record_coin` (
     `hash` char(66) NOT NULL COMMENT 'tx hash',
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sender` char(66) NOT NULL DEFAULT '' COMMENT 'tx sender',
-    `module_name` char(128) NOT NULL DEFAULT '' COMMENT '',
-    `contract_name` char(128) NOT NULL DEFAULT '' COMMENT '',
-    `resource` char(128) NOT NULL DEFAULT '' COMMENT 'resource name',
+    `module_name` text NOT NULL DEFAULT '' COMMENT '',
+    `contract_name` text NOT NULL DEFAULT '' COMMENT '',
+    `resource` text NOT NULL DEFAULT '' COMMENT 'resource name',
     `name` char(255) NOT NULL DEFAULT '' COMMENT 'contract name',
     `symbol` char(255) NOT NULL DEFAULT '' COMMENT 'contract symbol',
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -117,10 +117,10 @@ CREATE TABLE `record_coin` (
     KEY `hash` (`hash`),
     KEY `version` (`version`),
     KEY `tx_time` (`tx_time`),
-    KEY `resource` (`resource`),
     KEY `sender` (`sender`),
     KEY `name` (`name`),
-    KEY `symbol` (`symbol`)
+    KEY `symbol` (`symbol`),
+    FULLTEXT (resource) WITH PARSER ngram
 ) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
@@ -135,7 +135,7 @@ CREATE TABLE `history_coin` (
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sender` char(66) NOT NULL COMMENT 'tx sender',
     `receiver` char(66) NOT NULL COMMENT 'tx receiver',
-    `resource` char(128) NOT NULL COMMENT 'coin resource',
+    `resource` text NOT NULL COMMENT 'coin resource',
     `amount` varchar(128) NOT NULL COMMENT 'tx amount',
     `action` tinyint NOT NULL COMMENT '0: unknow, 1: mint, 2: transfer, 3:burn',
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -145,7 +145,7 @@ CREATE TABLE `history_coin` (
     KEY `version` (`version`),
     KEY `tx_time` (`tx_time`),
     KEY `index_sender_receiver` (`sender`, `receiver`),
-    KEY `resource` (`resource`)
+    FULLTEXT (resource) WITH PARSER ngram
 ) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
