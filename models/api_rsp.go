@@ -91,7 +91,7 @@ type EventData struct {
 	Description    string      `json:"description"`
 	Maximum        string      `json:"maximum"`
 	Uri            string      `json:"uri"`
-	Id             EventDataId `json:"id"`
+	Id             interface{} `json:"id,omitempty"`
 }
 
 type EventDataId struct {
