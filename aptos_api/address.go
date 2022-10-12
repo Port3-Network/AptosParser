@@ -199,7 +199,7 @@ func GetAddressAmount(c *gin.Context) {
 func GetAccountResource(address string) (*[]models.ResourceRsp, error) {
 	r := &[]models.ResourceRsp{}
 	url := fmt.Sprintf("%s/accounts/%s/resources", GDatabase.TxRpcUrl, address)
-	buf, err := models.HttpGet(url, 2)
+	buf, _, err := models.HttpGet(url, 2)
 	if err != nil {
 		return r, fmt.Errorf("resource HttpGet msg: %v", err)
 	}
