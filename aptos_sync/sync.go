@@ -37,12 +37,12 @@ func FullSync() {
 				}
 			}
 		}
+		// return
 		if err := saver.Commit(); err != nil {
 			oo.LogW("saver.Commit err %v", err)
 			continue
 		}
 	}
-
 }
 
 func GetTransactions(start string, limit int) (*[]models.TransactionRsp, error) {

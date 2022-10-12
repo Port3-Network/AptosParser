@@ -168,13 +168,15 @@ func GetCoinTransactions(c *gin.Context) {
 		Amount   string         `db:"amount"`
 		FuncName sql.NullString `db:"payload_func"`
 	}
-
+	if req.Resource != "" {
+		req.Resource = NativeAptosCoin
+	}
 	sql := oo.NewSqler().Table(models.TableHistoryCoin+" AS h").
-		LeftJoin(models.TableRecordCoin+" AS r", "h.resource=r.resource").
 		LeftJoin(models.TablePayload+" AS p", "h.version=p.version").
 		Order("h.id DESC").
 		Offset(int(req.Offset)).
 		Limit(int(req.PageSize))
+
 	if len(req.Resource) > 0 {
 		sql.Where("h.resource", req.Resource)
 	}
@@ -183,13 +185,27 @@ func GetCoinTransactions(c *gin.Context) {
 		sql.Where(sqlOr)
 	}
 
-	sqlStr := sql.Select("h.version,h.hash,h.tx_time,h.sender,h.receiver,h.resource,h.amount,r.name,r.symbol,p.payload_func")
+	sqlStr := sql.Select("h.version,h.hash,h.tx_time,h.sender,h.receiver,h.resource,h.amount,p.payload_func")
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect1 err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
 		return
 	}
+
+	type RecordData struct {
+		Name   string
+		Symbol string
+	}
+	record := make(map[string]*RecordData)
 	for _, v := range data {
+		if _, ok := record[v.Resource]; !ok {
+			resData := RecordData{}
+			innSql := oo.NewSqler().Table(models.TableRecordCoin).Where("resource", v.Resource).Select("name,symbol")
+			if err := oo.SqlGet(innSql, &resData); err != nil {
+				oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
+			}
+			record[v.Resource] = &resData
+		}
 		rsp.List = append(rsp.List, HistoryTokenJson{
 			Version:  v.Version,
 			Hash:     v.Hash,
@@ -197,13 +213,14 @@ func GetCoinTransactions(c *gin.Context) {
 			Sender:   v.Sender,
 			Receiver: v.Receiver,
 			Resource: v.Resource,
-			Name:     v.Name.String,
-			Symbol:   v.Symbol.String,
+			// Name:     v.Name.String,
+			// Symbol:   v.Symbol.String,
+			Name:     record[v.Resource].Name,
+			Symbol:   record[v.Resource].Symbol,
 			Amount:   v.Amount,
 			FuncName: v.FuncName.String,
 		})
 	}
-
 	sql2 := oo.NewSqler().Table(models.TableHistoryCoin)
 	if len(req.Resource) > 0 {
 		sql2.Where("resource", req.Resource)

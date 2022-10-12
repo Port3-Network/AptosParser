@@ -153,12 +153,12 @@ func GetTransactions(c *gin.Context) {
 		sqler.Where("t.version", req.Version)
 	}
 	sqlStr := sqler.Select("t.id,t.version,t.hash,t.tx_time,t.success,t.sender,p.payload_func AS call_func")
+	oo.LogD("%s: sql: %v\n", c.FullPath(), sqlStr)
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
 		return
 	}
-
 	for _, v := range data {
 		rsp.List = append(rsp.List, UserTransactionJson{
 			Id:       v.Id,
@@ -176,6 +176,7 @@ func GetTransactions(c *gin.Context) {
 		sqler2.Where("version", req.Version)
 	}
 	sqlStr2 := sqler2.Select("COUNT(*) AS total")
+	oo.LogD("%s: sql2: %v\n", c.FullPath(), sqlStr2)
 	if err = oo.SqlGet(sqlStr2, &rsp.Total); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)

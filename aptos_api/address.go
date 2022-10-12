@@ -66,12 +66,16 @@ func GetAddressAction(c *gin.Context) {
 
 	sqler := oo.NewSqler().Table(models.TablePayload+" AS p").
 		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version").
+		LeftJoin(models.TableHistoryToken+" AS ht", "p.version=ht.version").
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset)).
-		Order("p.tx_time DESC")
+		Order("p.id DESC")
+		// Order("p.tx_time DESC")
 
 	if req.Address != "" {
 		sqler.Where("p.sender", req.Address)
+		history_addr := fmt.Sprintf("h.sender='%s' or h.receiver='%s' or ht.sender='%s' or ht.receiver='%s'", req.Address, req.Address, req.Address, req.Address)
+		sqler.Where(history_addr)
 	}
 	if req.Resource != "" {
 		sqler.Where("h.resource", req.Resource)
@@ -85,6 +89,7 @@ func GetAddressAction(c *gin.Context) {
 		sqler.Where(endWhere)
 	}
 	sqlStr1 := sqler.Select("p.version,p.hash,p.tx_time,p.sender,p.payload_func AS function_name,h.resource")
+	oo.LogD("%s: sqlStr1: %v\n", c.FullPath(), sqlStr1)
 	if err = oo.SqlSelect(sqlStr1, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
@@ -102,10 +107,13 @@ func GetAddressAction(c *gin.Context) {
 	}
 
 	sqler2 := oo.NewSqler().Table(models.TablePayload+" AS p").
-		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version")
+		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version").
+		LeftJoin(models.TableHistoryToken+" AS ht", "p.version=ht.version")
 
 	if req.Address != "" {
 		sqler2.Where("p.sender", req.Address)
+		history_addr := fmt.Sprintf("h.sender='%s' or h.receiver='%s' or ht.sender='%s' or ht.receiver='%s'", req.Address, req.Address, req.Address, req.Address)
+		sqler2.Where(history_addr)
 	}
 	if req.Resource != "" {
 		sqler2.Where("h.resource", req.Resource)
@@ -119,6 +127,7 @@ func GetAddressAction(c *gin.Context) {
 		sqler2.Where(endWhere)
 	}
 	sqlStr2 := sqler2.Select("COUNT(*) AS total")
+	oo.LogD("%s: sqlStr2: %v\n", c.FullPath(), sqlStr2)
 
 	if err = oo.SqlGet(sqlStr2, &rsp.Total); err != nil {
 		oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)

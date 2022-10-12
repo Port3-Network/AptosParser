@@ -2,11 +2,50 @@ package main
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/Port3-Network/AptosParser/models"
 	oo "github.com/Port3-Network/liboo"
 )
 
+func parseInterface(v interface{}, nft *models.EventTokenDataId) {
+	data, ok := v.(map[string]interface{})
+	if !ok {
+		return
+	}
+	for k, v := range data {
+		switch val := v.(type) {
+		// case int8, uint8, int16, uint16, int32, uint32, int64, uint64, int, uint:
+		// 	if strings.EqualFold(k, "collection") && len(nft.Collection) <= 0 {
+		// 		nft.Collection = fmt.Sprintf("%d", val)
+		// 	} else if strings.EqualFold(k, "creator") && len(nft.Creator) <= 0 {
+		// 		nft.Creator = fmt.Sprintf("%d", val)
+		// 	} else if strings.EqualFold(k, "name") && len(nft.Name) <= 0 {
+		// 		nft.Name = fmt.Sprintf("%d", val)
+		// 	}
+		// case float32, float64:
+		// 	if strings.EqualFold(k, "collection") && len(nft.Collection) <= 0 {
+		// 		nft.Collection = fmt.Sprintf("%.0f", val)
+		// 	} else if strings.EqualFold(k, "creator") && len(nft.Creator) <= 0 {
+		// 		nft.Creator = fmt.Sprintf("%.0f", val)
+		// 	} else if strings.EqualFold(k, "name") && len(nft.Name) <= 0 {
+		// 		nft.Name = fmt.Sprintf("%.0f", val)
+		// 	}
+		case string:
+			if strings.EqualFold(k, "collection") && len(nft.Collection) <= 0 {
+				nft.Collection = val
+			} else if strings.EqualFold(k, "creator") && len(nft.Creator) <= 0 {
+				nft.Creator = val
+			} else if strings.EqualFold(k, "name") && len(nft.Name) <= 0 {
+				nft.Name = val
+			}
+		case interface{}:
+			parseInterface(val, nft)
+			// case []interface{}:
+
+		}
+	}
+}
 func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 	switch data.Payload.Type {
 	case TypeCallFunction:
@@ -194,14 +233,17 @@ func handlerRecordToken(saver *DbSaver, txTime, sequenceNum int64, data models.T
 				cType = c.Data.Type
 			}
 		}
-
+		var nftTokenData models.EventTokenDataId
+		parseInterface(event.Data.Id, &nftTokenData)
 		saver.recordToken = append(saver.recordToken, &models.RecordToken{
-			Version:     data.Version,
-			Hash:        data.Hash,
-			TxTime:      txTime,
-			Sender:      data.Sender,
-			Creator:     event.Data.Id.Creator,
-			Collection:  event.Data.Id.Collection,
+			Version:    data.Version,
+			Hash:       data.Hash,
+			TxTime:     txTime,
+			Sender:     data.Sender,
+			Creator:    nftTokenData.Creator,
+			Collection: nftTokenData.Collection,
+			// Creator:     event.Data.Id.Creator,
+			// Collection:  event.Data.Id.Collection,
 			Name:        event.Data.Name,
 			Description: event.Data.Description,
 			Uri:         event.Data.Uri,
@@ -213,13 +255,19 @@ func handlerRecordToken(saver *DbSaver, txTime, sequenceNum int64, data models.T
 
 func handlerAssetToken(saver *DbSaver, txTime, sequenceNum int64, data models.TransactionRsp) {
 	for _, event := range data.Events {
+		var nftTokenData models.EventTokenDataId
+		parseInterface(event.Data.Id, &nftTokenData)
+
 		switch event.Type {
 		case EventTokenDeposit:
 			ownerKey := nftToken{
 				Owner:      event.Guid.AccountAddress,
-				Creator:    event.Data.Id.TokenDataId.Creator,
-				Collection: event.Data.Id.TokenDataId.Collection,
-				Name:       event.Data.Id.TokenDataId.Name,
+				Creator:    nftTokenData.Creator,
+				Collection: nftTokenData.Collection,
+				Name:       nftTokenData.Name,
+				// Creator:    event.Data.Id.TokenDataId.Creator,
+				// Collection: event.Data.Id.TokenDataId.Collection,
+				// Name:       event.Data.Id.TokenDataId.Name,
 			}
 			asset, ok := saver.assetToken[ownerKey]
 			if !ok {
@@ -228,10 +276,13 @@ func handlerAssetToken(saver *DbSaver, txTime, sequenceNum int64, data models.Tr
 					Hash:       data.Hash,
 					TxTime:     txTime,
 					Owner:      event.Guid.AccountAddress,
-					Creator:    event.Data.Id.TokenDataId.Creator,
-					Collection: event.Data.Id.TokenDataId.Collection,
-					Name:       event.Data.Id.TokenDataId.Name,
-					Amount:     event.Data.Amount,
+					Creator:    nftTokenData.Creator,
+					Collection: nftTokenData.Collection,
+					Name:       nftTokenData.Name,
+					// Creator:    event.Data.Id.TokenDataId.Creator,
+					// Collection: event.Data.Id.TokenDataId.Collection,
+					// Name:       event.Data.Id.TokenDataId.Name,
+					Amount: event.Data.Amount,
 				}
 				saver.assetToken[ownerKey] = asset
 			} else {
@@ -244,9 +295,12 @@ func handlerAssetToken(saver *DbSaver, txTime, sequenceNum int64, data models.Tr
 		case EventTokenWithdraw:
 			ownerKey := nftToken{
 				Owner:      event.Guid.AccountAddress,
-				Creator:    event.Data.Id.TokenDataId.Creator,
-				Collection: event.Data.Id.TokenDataId.Collection,
-				Name:       event.Data.Id.TokenDataId.Name,
+				Creator:    nftTokenData.Creator,
+				Collection: nftTokenData.Collection,
+				Name:       nftTokenData.Name,
+				// Creator:    event.Data.Id.TokenDataId.Creator,
+				// Collection: event.Data.Id.TokenDataId.Collection,
+				// Name:       event.Data.Id.TokenDataId.Name,
 			}
 			asset, ok := saver.assetToken[ownerKey]
 			if !ok {
@@ -255,10 +309,13 @@ func handlerAssetToken(saver *DbSaver, txTime, sequenceNum int64, data models.Tr
 					Hash:       data.Hash,
 					TxTime:     txTime,
 					Owner:      event.Guid.AccountAddress,
-					Creator:    event.Data.Id.TokenDataId.Creator,
-					Collection: event.Data.Id.TokenDataId.Collection,
-					Name:       event.Data.Id.TokenDataId.Name,
-					Amount:     event.Data.Amount,
+					Creator:    nftTokenData.Creator,
+					Collection: nftTokenData.Collection,
+					Name:       nftTokenData.Name,
+					// Creator:    event.Data.Id.TokenDataId.Creator,
+					// Collection: event.Data.Id.TokenDataId.Collection,
+					// Name:       event.Data.Id.TokenDataId.Name,
+					Amount: event.Data.Amount,
 				}
 				saver.assetToken[ownerKey] = asset
 			} else {
@@ -280,17 +337,26 @@ func handlerHistoryToken(saver *DbSaver, txTime, sequenceNum int64, data models.
 		var sender, receiver string = ZeroAddress, ZeroAddress
 		var creator, collection, name string = "", "", ""
 
+		var nftTokenData models.EventTokenDataId
+		parseInterface(event.Data.Id, &nftTokenData)
+
 		switch event.Type {
 		case EventTokenDeposit:
-			creator = event.Data.Id.TokenDataId.Creator
-			collection = event.Data.Id.TokenDataId.Collection
-			name = event.Data.Id.TokenDataId.Name
+			creator = nftTokenData.Creator
+			collection = nftTokenData.Collection
+			name = nftTokenData.Name
+			// creator = event.Data.Id.TokenDataId.Creator
+			// collection = event.Data.Id.TokenDataId.Collection
+			// name = event.Data.Id.TokenDataId.Name
 			receiver = event.Guid.AccountAddress
 			amount = event.Data.Amount
 		case EventTokenWithdraw:
-			creator = event.Data.Id.TokenDataId.Creator
-			collection = event.Data.Id.TokenDataId.Collection
-			name = event.Data.Id.TokenDataId.Name
+			creator = nftTokenData.Creator
+			collection = nftTokenData.Collection
+			name = nftTokenData.Name
+			// creator = event.Data.Id.TokenDataId.Creator
+			// collection = event.Data.Id.TokenDataId.Collection
+			// name = event.Data.Id.TokenDataId.Name
 			sender = event.Guid.AccountAddress
 			amount = event.Data.Amount
 		}
