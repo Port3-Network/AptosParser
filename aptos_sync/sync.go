@@ -4,12 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/Port3-Network/AptosParser/models"
 	oo "github.com/Port3-Network/liboo"
 )
 
 func FullSync() {
+	var (
+		limit    int64 = GDatabase.BlockCount
+		minCount int64 = 16
+	)
 	for {
 		syncNum, err := GetSyncBlockNum()
 		if err != nil {
@@ -19,14 +24,22 @@ func FullSync() {
 		oo.LogD("SyncAllNFTInfo GetSyncBcnum got number: %d", syncNum)
 
 		start := syncNum
-		saver := NewDbSaver(uint64(start)+uint64(GDatabase.BlockCount), 0)
 
-		txs, err := GetTransactions(strconv.FormatInt(start, 10), int(GDatabase.BlockCount))
+		txs, err := GetTransactions(strconv.FormatInt(start, 10), limit)
 		if err != nil {
+			if err.Error() == "getBuf err" {
+				if limit >= minCount {
+					limit = limit / 2
+				} else {
+					time.Sleep(time.Second * 3)
+				}
+				continue
+			}
 			oo.LogD("GetTransactions err, msg: %v", err)
 			continue
 		}
 
+		saver := NewDbSaver(uint64(start)+uint64(limit), 0)
 		for _, tx := range *txs {
 			switch tx.Type {
 			case UserTransaction:
@@ -45,32 +58,36 @@ func FullSync() {
 	}
 }
 
-func GetTransactions(start string, limit int) (*[]models.TransactionRsp, error) {
-	r := &[]models.TransactionRsp{}
+func GetTransactions(start string, limit int64) (r *[]models.TransactionRsp, err error) {
+	r = &[]models.TransactionRsp{}
 	url := fmt.Sprintf("%s/transactions?start=%s&limit=%d", GDatabase.TxRpcUrl, start, limit)
-	buf, err := models.HttpGet(url, 2)
+	buf, _, err := models.HttpGet(url, 2)
 	if err != nil {
 		return r, fmt.Errorf("tx HttpGet msg: %v", err)
+	}
+	if buf == nil {
+		return nil, oo.NewError("getBuf err")
 	}
 
 	err = json.Unmarshal(buf, &r)
 	if err != nil {
 		return r, fmt.Errorf("tx jsonUnmarshal msg: %v", err)
 	}
+
 	return r, nil
 }
 
-func GetBlocks(blockNum int64) (*models.BlockRsp, error) {
+func GetBlocks(blockNum int64) (*models.BlockRsp, string, error) {
 	r := &models.BlockRsp{}
-	url := fmt.Sprintf("%s/blocks/by_height/%d?with_transactions=true", GDatabase.TxRpcUrl, blockNum)
-	buf, err := models.HttpGet(url, 2)
+	url := fmt.Sprintf("%s/blocks/by_height/%d?with_transactions=false", GDatabase.TxRpcUrl, blockNum)
+	buf, blockHeight, err := models.HttpGet(url, 2)
 	if err != nil {
-		return r, fmt.Errorf("blocks HttpGet msg: %v", err)
+		return r, "", fmt.Errorf("blocks HttpGet msg: %v", err)
 	}
-
 	err = json.Unmarshal(buf, &r)
 	if err != nil {
-		return r, fmt.Errorf("blocks Unmarshal msg: %v", err)
+		return r, "", fmt.Errorf("blocks Unmarshal msg: %v", err)
 	}
-	return r, nil
+
+	return r, blockHeight, nil
 }

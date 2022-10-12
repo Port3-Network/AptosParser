@@ -14,9 +14,10 @@ const (
 	ActionBurn     = 2
 	ActionTransfer = 3
 
-	TypeCallFunction = "entry_function_payload"
-	EventWithdraw    = "0x1::coin::WithdrawEvent" // -
-	EventDeposit     = "0x1::coin::DepositEvent"  // +
+	TypeCallFunction  = "entry_function_payload"
+	EventWithdraw     = "0x1::coin::WithdrawEvent" // -
+	EventDeposit      = "0x1::coin::DepositEvent"  // +
+	EventCoinRegister = "0x1::account::CoinRegisterEvent"
 
 	EventCollectionCreate = "0x3::token::CreateCollectionEvent"
 	EventTokenCreate      = "0x3::token::CreateTokenDataEvent"

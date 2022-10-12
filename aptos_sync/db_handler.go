@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -59,10 +61,10 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 		handlerTx(db, txTime, sequenceNum, data)
 
 		// record ->
-		if data.Payload.Function == FunctionPublishPkg {
-			handlerRecordCoin(db, txTime, sequenceNum, data)
-			return nil
-		}
+		// if data.Payload.Function == FunctionPublishPkg {
+		handlerRecordCoin(db, txTime, sequenceNum, data)
+		// 	return nil
+		// }
 
 		// history -> done
 		handlerHistoryCoin(db, txTime, sequenceNum, data)
@@ -168,24 +170,42 @@ func handlerHistoryCoin(saver *DbSaver, txTime, sequenceNum int64, data models.T
 }
 
 func handlerRecordCoin(saver *DbSaver, txTime, sequenceNum int64, data models.TransactionRsp) {
-	for _, change := range data.Changes {
-		contract := ParseType(change.Data.Type)
-		if contract == nil {
+	for _, event := range data.Events {
+		if event.Type != EventCoinRegister {
 			continue
 		}
-		switch contract.Type {
-		case ChangeTypeCoinInfo:
-			saver.recordCoin = append(saver.recordCoin, &models.RecordCoin{
+		coinKey := coinInfo{
+			Owner:      data.Sender,
+			ModuleName: "",
+			StructName: "",
+		}
+		mdName := event.Data.TypeInfo.ModuleName
+		if strings.HasPrefix(mdName, "0x") && len(mdName) > 2 {
+			n, _ := hex.DecodeString(mdName[2:])
+			coinKey.ModuleName = string(n)
+		}
+
+		sName := event.Data.TypeInfo.StructName
+		if strings.HasPrefix(sName, "0x") && len(sName) > 2 {
+			s, _ := hex.DecodeString(sName[2:])
+			coinKey.StructName = string(s)
+		}
+
+		record, ok := saver.recordCoin[coinKey]
+		if !ok {
+			record = &models.RecordCoin{
 				Version:      data.Version,
 				Hash:         data.Hash,
 				TxTime:       txTime,
 				Sender:       data.Sender,
-				ModuleName:   contract.Module,
-				ContractName: contract.Name,
-				Resource:     contract.Resource,
-				Name:         change.Data.Data.Name,
-				Symbol:       change.Data.Data.Symbol,
-			})
+				ModuleName:   coinKey.ModuleName,
+				ContractName: coinKey.StructName,
+				Resource:     fmt.Sprintf("%s::%s::%s", coinKey.Owner, coinKey.ModuleName, coinKey.StructName),
+			}
+			saver.recordCoin[coinKey] = record
+		} else {
+			record.Version = data.Version
+			record.Hash = data.Hash
 		}
 	}
 }

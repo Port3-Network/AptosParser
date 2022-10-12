@@ -1,5 +1,9 @@
 package models
 
+type ErrResp struct {
+	Msg     string `json:"message"`
+	ErrCode string `json:"error_code"`
+}
 type BlockRsp struct {
 	BlockHeight    string           `json:"block_height"`
 	BlockHash      string           `json:"block_hash"`
@@ -84,14 +88,15 @@ type TxEvent struct {
 }
 
 type EventData struct {
-	Amount         string      `json:"amount"`
-	CollectionName string      `json:"collection_name"`
-	Name           string      `json:"name"`
-	Creator        string      `json:"creator"`
-	Description    string      `json:"description"`
-	Maximum        string      `json:"maximum"`
-	Uri            string      `json:"uri"`
-	Id             interface{} `json:"id,omitempty"`
+	Amount         string       `json:"amount"`
+	CollectionName string       `json:"collection_name"`
+	Name           string       `json:"name"`
+	Creator        string       `json:"creator"`
+	Description    string       `json:"description"`
+	Maximum        string       `json:"maximum"`
+	Uri            string       `json:"uri"`
+	Id             interface{}  `json:"id,omitempty"`
+	TypeInfo       CoinTypeInfo `json:"type_info"` // 0x1::account::CoinRegisterEvent
 }
 
 type EventDataId struct {
@@ -103,6 +108,12 @@ type EventTokenDataId struct {
 	Collection string `json:"collection"`
 	Creator    string `json:"creator"`
 	Name       string `json:"name"`
+}
+
+type CoinTypeInfo struct {
+	AccountAddress string `json:"account_address"`
+	ModuleName     string `json:"module_name"`
+	StructName     string `json:"struct_name"`
 }
 
 type EventGuid struct {

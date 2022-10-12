@@ -1,7 +1,7 @@
-DROP DATABASE IF EXISTS aptos_sync;
-CREATE DATABASE IF NOT EXISTS aptos_sync;
-USE aptos_sync;
-SET sql_mode="NO_ENGINE_SUBSTITUTION";
+DROP DATABASE IF EXISTS aptos_sync_full_testnet;
+CREATE DATABASE IF NOT EXISTS aptos_sync_full_testnet;
+USE aptos_sync_full_testnet;
+SET sql_mode="modes,NO_ENGINE_SUBSTITUTION";
 
 -- NOTE: aptos address length -> 66
 -- ----------------------------
@@ -19,7 +19,7 @@ CREATE TABLE `sysconfig` (
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE KEY `cfg_name` (`cfg_name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table block -> block detail
@@ -39,7 +39,7 @@ CREATE TABLE `block` (
     UNIQUE KEY `height` (`height`),
     KEY `hash` (`hash`),
     KEY `block_time` (`block_time`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table transaction -> all tx record
@@ -66,8 +66,9 @@ CREATE TABLE `transaction` (
     KEY `hash` (`hash`),
     KEY `version` (`version`),
     KEY `sender` (`sender`),
-    KEY `receiver` (`receiver`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+    KEY `receiver` (`receiver`),
+    KEY `tx_time` (`tx_time`)
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table payload -> tx log, which function to call
@@ -85,8 +86,13 @@ CREATE TABLE `payload` (
     `payload_type` char(128) NOT NULL COMMENT 'call type, payload type',
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `hash` (`hash`),
+    KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
+    KEY `sender` (`sender`),
+    KEY `payload_func` (`payload_func`)
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table record_coin -> publish pkg record
@@ -100,16 +106,22 @@ CREATE TABLE `record_coin` (
     `hash` char(66) NOT NULL COMMENT 'tx hash',
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sender` char(66) NOT NULL DEFAULT '' COMMENT 'tx sender',
-    `module_name` char(128) NOT NULL DEFAULT '' COMMENT '',
-    `contract_name` char(128) NOT NULL DEFAULT '' COMMENT '',
-    `resource` char(128) NOT NULL DEFAULT '' COMMENT 'resource name',
-    `name` text NOT NULL DEFAULT '' COMMENT 'contract name',
-    `symbol` text NOT NULL DEFAULT '' COMMENT 'contract symbol',
+    `module_name` text NOT NULL DEFAULT '' COMMENT '',
+    `contract_name` text NOT NULL DEFAULT '' COMMENT '',
+    `resource` text NOT NULL DEFAULT '' COMMENT 'resource name',
+    `name` char(255) NOT NULL DEFAULT '' COMMENT 'contract name',
+    `symbol` char(255) NOT NULL DEFAULT '' COMMENT 'contract symbol',
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
-    UNIQUE KEY `resource` (`resource`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+    KEY `hash` (`hash`),
+    KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
+    KEY `sender` (`sender`),
+    KEY `name` (`name`),
+    KEY `symbol` (`symbol`),
+    FULLTEXT (resource) WITH PARSER ngram
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table history_coin -> coin transfer histories
@@ -123,7 +135,7 @@ CREATE TABLE `history_coin` (
     `tx_time` bigint NOT NULL DEFAULT 0 COMMENT 'block timestamp',
     `sender` char(66) NOT NULL COMMENT 'tx sender',
     `receiver` char(66) NOT NULL COMMENT 'tx receiver',
-    `resource` char(128) NOT NULL COMMENT 'coin resource',
+    `resource` text NOT NULL COMMENT 'coin resource',
     `amount` varchar(128) NOT NULL COMMENT 'tx amount',
     `action` tinyint NOT NULL COMMENT '0: unknow, 1: mint, 2: transfer, 3:burn',
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -131,9 +143,10 @@ CREATE TABLE `history_coin` (
     PRIMARY KEY (`id`) USING BTREE,
     KEY `hash` (`hash`),
     KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
     KEY `index_sender_receiver` (`sender`, `receiver`),
-    KEY `index_time` (`tx_time`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+    FULLTEXT (resource) WITH PARSER ngram
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table collection -> collection
@@ -155,8 +168,13 @@ CREATE TABLE `collection` (
     `type` char(128) NOT NULL DEFAULT '' COMMENT 'collection type',
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+    PRIMARY KEY (`id`) USING BTREE,
+    KEY `hash` (`hash`),
+    KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
+    KEY `sender` (`sender`),
+    KEY `col_info` (`creator`, `name`)
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table record_token -> publish pkg record
@@ -180,8 +198,12 @@ CREATE TABLE `record_token` (
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
+    KEY `hash` (`hash`),
+    KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
+    KEY `sender` (`sender`),
     KEY `token_data` (`creator`, `collection`, `name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table asset_token -> owner of each nft
@@ -202,8 +224,11 @@ CREATE TABLE `asset_token` (
     `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
+    KEY `hash` (`hash`),
+    KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
     KEY `owner_token_data` (`owner`, `creator`, `collection`, `name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
 -- Table history_token -> token transfer histories
@@ -226,7 +251,9 @@ CREATE TABLE `history_token` (
     `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`) USING BTREE,
     KEY `hash` (`hash`),
+    KEY `version` (`version`),
+    KEY `tx_time` (`tx_time`),
     KEY `index_sender_receiver` (`sender`, `receiver`),
-    KEY `index_time` (`tx_time`),
-    KEY `token_data` (`creator`, `collection`, `name`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;
+    KEY `token_data` (`creator`, `collection`, `name`),
+    KEY `token_action` (`action`)
+) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
