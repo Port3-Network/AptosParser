@@ -15,6 +15,7 @@ import (
 type GetActionReq struct {
 	Address   string `form:"address"`                                  // optional, user address
 	Resource  string `form:"resource"`                                 // optional, resource name
+	FuncName  string `form:"funcName"`                                 // optional, call function
 	StartTime int64  `form:"startTime"`                                // optional, begin time
 	EndTime   int64  `form:"endTime"`                                  // optional, end time
 	Offset    int64  `form:"offset" json:"offset" validate:"gte=0"`    // required, data offset
@@ -63,7 +64,7 @@ func GetAddressAction(c *gin.Context) {
 		FuncName string         `db:"function_name"`
 		Resource sql.NullString `db:"resource"`
 	}
-
+	fmt.Printf("req: %v\n", req)
 	sqler := oo.NewSqler().Table(models.TablePayload+" AS p").
 		LeftJoin(models.TableHistoryCoin+" AS h", "p.version=h.version").
 		LeftJoin(models.TableHistoryToken+" AS ht", "p.version=ht.version").
@@ -78,9 +79,14 @@ func GetAddressAction(c *gin.Context) {
 		sqler.Where(history_addr)
 	}
 	if req.Resource != "" {
-		resLike := fmt.Sprintf("h.resource like '%%%s%%'", req.Resource)
+		resLike := fmt.Sprintf("h.resource like '%s%%'", req.Resource)
 		sqler.Where(resLike)
 		// sqler.Where("h.resource", req.Resource)
+	}
+	if req.FuncName != "" {
+		funcLike := fmt.Sprintf("p.payload_func like '%s%%'", req.FuncName)
+		sqler.Where(funcLike)
+		// sqler2.Where("p.payload_func", req.FuncName)
 	}
 	if req.StartTime != 0 {
 		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
@@ -118,9 +124,14 @@ func GetAddressAction(c *gin.Context) {
 		sqler2.Where(history_addr)
 	}
 	if req.Resource != "" {
-		resLike := fmt.Sprintf("h.resource like '%%%s%%'", req.Resource)
-		sqler.Where(resLike)
+		resLike := fmt.Sprintf("h.resource like '%s%%'", req.Resource)
+		sqler2.Where(resLike)
 		// sqler2.Where("h.resource", req.Resource)
+	}
+	if req.FuncName != "" {
+		funcLike := fmt.Sprintf("p.payload_func like '%s%%'", req.FuncName)
+		sqler2.Where(funcLike)
+		// sqler2.Where("p.payload_func", req.FuncName)
 	}
 	if req.StartTime != 0 {
 		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
