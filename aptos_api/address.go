@@ -79,12 +79,12 @@ func GetAddressAction(c *gin.Context) {
 		sqler.Where(history_addr)
 	}
 	if req.Resource != "" {
-		resLike := fmt.Sprintf("h.resource like '%%%s%%'", req.Resource)
+		resLike := fmt.Sprintf("h.resource like '%s%%'", req.Resource)
 		sqler.Where(resLike)
 		// sqler.Where("h.resource", req.Resource)
 	}
 	if req.FuncName != "" {
-		funcLike := fmt.Sprintf("p.payload_func like '%%%s%%'", req.FuncName)
+		funcLike := fmt.Sprintf("p.payload_func like '%s%%'", req.FuncName)
 		sqler.Where(funcLike)
 		// sqler2.Where("p.payload_func", req.FuncName)
 	}
@@ -124,12 +124,12 @@ func GetAddressAction(c *gin.Context) {
 		sqler2.Where(history_addr)
 	}
 	if req.Resource != "" {
-		resLike := fmt.Sprintf("h.resource like '%%%s%%'", req.Resource)
+		resLike := fmt.Sprintf("h.resource like '%s%%'", req.Resource)
 		sqler2.Where(resLike)
 		// sqler2.Where("h.resource", req.Resource)
 	}
 	if req.FuncName != "" {
-		funcLike := fmt.Sprintf("p.payload_func like '%%%s%%'", req.FuncName)
+		funcLike := fmt.Sprintf("p.payload_func like '%s%%'", req.FuncName)
 		sqler2.Where(funcLike)
 		// sqler2.Where("p.payload_func", req.FuncName)
 	}
