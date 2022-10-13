@@ -63,6 +63,7 @@ func InitAPIRouter() *gin.Engine {
 
 		v1Group.GET("/get_address_action", GetAddressAction)
 		v1Group.GET("/get_address_amount", GetAddressAmount)
+		v1Group.GET("/get_asset_token", GetAssetToken)
 
 		v1Group.GET("/stats", GetStats)
 	}
