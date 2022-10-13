@@ -78,7 +78,9 @@ func GetAddressAction(c *gin.Context) {
 		sqler.Where(history_addr)
 	}
 	if req.Resource != "" {
-		sqler.Where("h.resource", req.Resource)
+		resLike := fmt.Sprintf("h.resource like '%%%s%%'", req.Resource)
+		sqler.Where(resLike)
+		// sqler.Where("h.resource", req.Resource)
 	}
 	if req.StartTime != 0 {
 		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
