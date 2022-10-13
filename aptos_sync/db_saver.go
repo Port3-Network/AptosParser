@@ -273,8 +273,8 @@ func (db *DbSaver) doCommitAssetToken(tx *sql.Tx) (err error) {
 		sqlStr := oo.NewSqler().Table(models.TableAssetToken).
 			Where("owner", asset.Owner).
 			Where("creator", asset.Creator).
-			Where("collection", asset.Collection).
-			Where("name", asset.Name).
+			Where("collection", u.QueryEscape(asset.Collection)).
+			Where("name", u.QueryEscape(asset.Name)).
 			Select("*")
 		err := oo.SqlGet(sqlStr, &assetToken)
 		if err != nil && err != oo.ErrNoRows {
@@ -288,8 +288,8 @@ func (db *DbSaver) doCommitAssetToken(tx *sql.Tx) (err error) {
 					"tx_time":    asset.TxTime,
 					"owner":      asset.Owner,
 					"creator":    asset.Creator,
-					"collection": asset.Collection,
-					"name":       asset.Name,
+					"collection": u.QueryEscape(asset.Collection),
+					"name":       u.QueryEscape(asset.Name),
 					"amount":     asset.Amount,
 				})
 			if err := oo.SqlTxExec(tx, sqlStr); err != nil {
@@ -301,8 +301,8 @@ func (db *DbSaver) doCommitAssetToken(tx *sql.Tx) (err error) {
 			sqlStr := oo.NewSqler().Table(models.TableAssetToken).
 				Where("owner", asset.Owner).
 				Where("creator", asset.Creator).
-				Where("collection", asset.Collection).
-				Where("name", asset.Name).
+				Where("collection", u.QueryEscape(asset.Collection)).
+				Where("name", u.QueryEscape(asset.Name)).
 				Update(map[string]interface{}{
 					"version": asset.Version,
 					"hash":    asset.Hash,
