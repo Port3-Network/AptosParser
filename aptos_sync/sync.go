@@ -24,7 +24,7 @@ func FullSync() {
 		oo.LogD("SyncAllNFTInfo GetSyncBcnum got number: %d", syncNum)
 
 		start := syncNum
-
+		var end int64
 		txs, err := GetTransactions(strconv.FormatInt(start, 10), limit)
 		if err != nil {
 			if err.Error() == "getBuf err" {
@@ -38,8 +38,12 @@ func FullSync() {
 			oo.LogD("GetTransactions err, msg: %v", err)
 			continue
 		}
-
-		saver := NewDbSaver(uint64(start)+uint64(limit), 0)
+		if int(limit) != len(*txs) {
+			end = start + int64(len(*txs))
+		} else {
+			end = start + limit
+		}
+		saver := NewDbSaver(uint64(end), 0)
 		for _, tx := range *txs {
 			switch tx.Type {
 			case UserTransaction:
