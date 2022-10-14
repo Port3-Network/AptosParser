@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	u "net/url"
 	"strings"
@@ -110,6 +109,7 @@ func GetAssetToken(c *gin.Context) {
 	type collectionInfo struct {
 		Creator string
 		Name    string
+		NFTName string
 	}
 	type NftInfo struct {
 		CollectionName        string `json:"collection_name"`
@@ -124,6 +124,7 @@ func GetAssetToken(c *gin.Context) {
 		cInfo := collectionInfo{
 			Creator: v.CollectionCreator,
 			Name:    v.CollectionName,
+			NFTName: v.TokenName,
 		}
 		if _, ok := nft[cInfo]; !ok {
 			resData := NftInfo{}
@@ -133,7 +134,6 @@ func GetAssetToken(c *gin.Context) {
 				Where("r.collection", v.CollectionName).
 				Where("r.name", v.TokenName).
 				Select("c.name AS collection_name,c.description AS collection_description,c.uri AS collection_uri,r.description AS token_description,r.uri AS token_uri")
-			fmt.Printf("innsql: %v\n", innSql)
 			if err := oo.SqlGet(innSql, &resData); err != nil {
 				oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
 			}
