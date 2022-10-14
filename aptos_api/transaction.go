@@ -187,6 +187,7 @@ func GetTransactions(c *gin.Context) {
 
 type SyncStatsRsp struct {
 	CurrentVersion string `json:"current_version"`
+	UpdateTime     string `json:"update_at"`
 }
 
 // @Tags Tx
@@ -198,26 +199,25 @@ func GetStats(c *gin.Context) {
 	appC := Context{C: c}
 	rsp := &SyncStatsRsp{}
 	var err error
-	rsp.CurrentVersion, err = GetSysConfig(SyncLatestBlock)
 	if err != nil {
 		oo.LogD("%s: GetSyncBlockNum err, msg: %v", c.FullPath(), err)
 	}
 
-	appC.Response(http.StatusOK, SUCCESS, rsp)
-}
-
-func GetSysConfig(key string) (str string, err error) {
-	conn := GMysql.GetConn()
-	defer GMysql.UnGetConn(conn)
-
+	var data struct {
+		CfgVal   string `json:"cfg_val"`
+		UpdateAt string `json:"update_at"`
+	}
 	sqlstr := oo.NewSqler().Table(models.TableSysconfig).
-		Where("cfg_name", key).
-		Select("cfg_val")
+		Where("cfg_name", SyncLatestBlock).
+		Select("cfg_val,update_at")
 
-	err = conn.Get(&str, sqlstr)
+	err = oo.SqlGet(sqlstr, &data)
 	if nil != err && oo.ErrNoRows != err {
-		err = oo.NewError("failed to sql[%s] err[%v]", sqlstr, err)
+		oo.LogD("%s: conn.Get err, msg: %v", c.FullPath(), err)
+		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
 		return
 	}
-	return
+	rsp.CurrentVersion = data.CfgVal
+	rsp.UpdateTime = data.UpdateAt
+	appC.Response(http.StatusOK, SUCCESS, rsp)
 }
