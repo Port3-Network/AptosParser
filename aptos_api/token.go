@@ -11,13 +11,11 @@ import (
 )
 
 type AssetTokensReq struct {
-	Address           string `form:"address" json:"address" validate:"omitempty"`             // optional, user address
-	CollectionId      string `form:"collection_id" json:"collection_id" validate:"omitempty"` // optional, collection id -> creator+collection name
-	CollectionCreator string `form:"creator"`
-
-	TokenId  string `form:"token_id" json:"token_id" validate:"omitempty"` // optional, token_id -> token name, requires collection id
-	Offset   int64  `form:"offset" json:"offset" validate:"gte=0"`         // required, data offset
-	PageSize int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`      // required, number of data a time
+	Address      string `form:"address" json:"address" validate:"omitempty"`             // optional, user address
+	CollectionId string `form:"collection_id" json:"collection_id" validate:"omitempty"` // optional, collection id -> creator+collection name
+	TokenId      string `form:"token_id" json:"token_id" validate:"omitempty"`           // optional, token_id -> token name, requires collection id
+	Offset       int64  `form:"offset" json:"offset" validate:"gte=0"`                   // required, data offset
+	PageSize     int64  `form:"pageSize" json:"pageSize" validate:"gt=0"`                // required, number of data a time
 }
 
 type AssetTokensRsp struct {
@@ -188,14 +186,16 @@ func chkAssetTokenReq(req AssetTokensReq) (nft *nftToken, ret bool) {
 	ret = false
 	if req.TokenId != "" {
 		if req.CollectionId == "" {
-			return nil, false
+			return nft, false
 		}
 		nft.Name = req.TokenId
+	} else {
+		return nft, true
 	}
 
 	cols := strings.SplitN(req.CollectionId, "_", 2)
 	if len(cols) != 2 {
-		return nil, false
+		return nft, false
 	}
 
 	nft.Creator = cols[0]
