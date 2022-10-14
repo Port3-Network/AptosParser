@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"net/http"
 	u "net/url"
 	"strings"
@@ -98,7 +99,7 @@ func GetAssetToken(c *gin.Context) {
 		sqler.Where("creator", nftId.Creator).Where("collection", u.QueryEscape(nftId.Collection))
 	}
 	sqlStr := sqler.Select("id,version,hash,tx_time,owner,creator AS collection_creator,collection AS collection_name,name AS token_name,amount")
-
+	oo.LogD("%s: sqlStr: %v\n", sqlStr)
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
@@ -110,11 +111,11 @@ func GetAssetToken(c *gin.Context) {
 		NFTName string
 	}
 	type NftInfo struct {
-		CollectionName        string `json:"collection_name"`
-		CollectionDescription string `json:"collection_description"`
-		CollectionUri         string `json:"collection_uri"`
-		TokenDescription      string `json:"token_description"`
-		TokenUri              string `json:"token_uri"`
+		CollectionName        sql.NullString `json:"collection_name"`
+		CollectionDescription sql.NullString `json:"collection_description"`
+		CollectionUri         sql.NullString `json:"collection_uri"`
+		TokenDescription      sql.NullString `json:"token_description"`
+		TokenUri              sql.NullString `json:"token_uri"`
 	}
 	nft := make(map[collectionInfo]*NftInfo)
 
@@ -132,17 +133,18 @@ func GetAssetToken(c *gin.Context) {
 				Where("r.collection", v.CollectionName).
 				Where("r.name", v.TokenName).
 				Select("c.name AS collection_name,c.description AS collection_description,c.uri AS collection_uri,r.description AS token_description,r.uri AS token_uri")
+			oo.LogD("innsql: %v\n", innSql)
 			if err := oo.SqlGet(innSql, &resData); err != nil {
 				oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
 			}
 			nft[cInfo] = &resData
 		}
 		colName, _ := u.QueryUnescape(v.CollectionName)
-		colDesc, _ := u.QueryUnescape(nft[cInfo].CollectionDescription)
+		colDesc, _ := u.QueryUnescape(nft[cInfo].CollectionDescription.String)
 		tokenName, _ := u.QueryUnescape(v.TokenName)
-		tokenDesc, _ := u.QueryUnescape(nft[cInfo].TokenDescription)
-		tokenUri, _ := u.QueryUnescape(nft[cInfo].TokenUri)
-		collectionUri, _ := u.QueryUnescape(nft[cInfo].CollectionUri)
+		tokenDesc, _ := u.QueryUnescape(nft[cInfo].TokenDescription.String)
+		tokenUri, _ := u.QueryUnescape(nft[cInfo].TokenUri.String)
+		collectionUri, _ := u.QueryUnescape(nft[cInfo].CollectionUri.String)
 		rsp.List = append(rsp.List, AssetTokenJson{
 			Id:                    v.Id,
 			Version:               v.Version,
@@ -189,16 +191,15 @@ func chkAssetTokenReq(req AssetTokensReq) (nft *nftToken, ret bool) {
 			return nft, false
 		}
 		nft.Name = req.TokenId
-	} else {
-		return nft, true
 	}
+	if req.CollectionId != "" {
+		cols := strings.SplitN(req.CollectionId, "_", 2)
+		if len(cols) != 2 {
+			return nft, false
+		}
 
-	cols := strings.SplitN(req.CollectionId, "_", 2)
-	if len(cols) != 2 {
-		return nft, false
+		nft.Creator = cols[0]
+		nft.Collection = cols[1]
 	}
-
-	nft.Creator = cols[0]
-	nft.Collection = cols[1]
 	return nft, true
 }
