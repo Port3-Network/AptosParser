@@ -175,7 +175,7 @@ func handlerRecordCoin(saver *DbSaver, txTime, sequenceNum int64, data models.Tr
 			continue
 		}
 		coinKey := coinInfo{
-			Owner:      data.Sender,
+			Owner:      event.Data.TypeInfo.AccountAddress,
 			ModuleName: "",
 			StructName: "",
 		}
@@ -191,6 +191,18 @@ func handlerRecordCoin(saver *DbSaver, txTime, sequenceNum int64, data models.Tr
 			coinKey.StructName = string(s)
 		}
 
+		var name, symbol string
+		var decimals int64
+		resource := fmt.Sprintf("%s::%s::%s", coinKey.Owner, coinKey.ModuleName, coinKey.StructName)
+		dataType := fmt.Sprintf("0x1::coin::CoinInfo<%s>", resource)
+		for _, change := range data.Changes {
+			if change.Data.Type == dataType {
+				decimals = change.Data.Data.Decimals
+				name = change.Data.Data.Name
+				symbol = change.Data.Data.Symbol
+			}
+		}
+
 		record, ok := saver.recordCoin[coinKey]
 		if !ok {
 			record = &models.RecordCoin{
@@ -200,7 +212,10 @@ func handlerRecordCoin(saver *DbSaver, txTime, sequenceNum int64, data models.Tr
 				Sender:       data.Sender,
 				ModuleName:   coinKey.ModuleName,
 				ContractName: coinKey.StructName,
-				Resource:     fmt.Sprintf("%s::%s::%s", coinKey.Owner, coinKey.ModuleName, coinKey.StructName),
+				Name:         name,
+				Symbol:       symbol,
+				Decimals:     decimals,
+				Resource:     resource,
 			}
 			saver.recordCoin[coinKey] = record
 		} else {

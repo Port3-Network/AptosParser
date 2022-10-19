@@ -73,6 +73,7 @@ type RecordCoin struct {
 	Resource     string `db:"resource,omitempty"`
 	Name         string `db:"name,omitempty"`
 	Symbol       string `db:"symbol,omitempty"`
+	Decimals     int64  `db:"decimals,omitempty"`
 	CreateAt     string `db:"create_at,omitempty"`
 	UpdateAt     string `db:"update_at,omitempty"`
 }

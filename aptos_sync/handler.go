@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 
 	"github.com/Port3-Network/AptosParser/models"
 	oo "github.com/Port3-Network/liboo"
+	"github.com/garyburd/redigo/redis"
 )
 
 func GetSyncBlockNum() (bcnum int64, err error) {
@@ -92,4 +94,31 @@ type ResourceStruct struct {
 	Address string
 	Module  string
 	Name    string
+}
+
+func redisHGet(key, field string) (data models.RecordCoin, err error) {
+	msg, err := redis.Bytes(oo.RedisExec("HGET", key, field))
+	if err != nil && err != redis.ErrNil {
+		oo.LogD("RedisExec err, msg: %v", err)
+		return
+	}
+	if len(msg) > 0 {
+		err = json.Unmarshal(msg, &data)
+	}
+
+	return data, err
+}
+
+func redisHSet(key string, record models.RecordCoin) (err error) {
+	data, err := json.Marshal(record)
+	if err != nil {
+		oo.LogD("Marshal err, msg: %v", err)
+		return
+	}
+
+	_, err = oo.RedisExec("HSET", key, record.Resource, data)
+	if err != nil && err != redis.ErrNil {
+		oo.LogD("RedisExec err, msg: %v", err)
+	}
+	return
 }
