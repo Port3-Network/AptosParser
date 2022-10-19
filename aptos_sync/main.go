@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"os"
 	"path"
@@ -11,16 +12,22 @@ import (
 )
 
 type DataBase struct {
-	TxRpcUrl      string `toml:"TX_RPC_URL,omitzero"`
-	User          string `toml:"USER,omitzero"`
-	Password      string `toml:"PASSWORD,omitzero"`
-	Host          string `toml:"HOST,omitzero"`
-	Port          int32  `toml:"PORT,omitzero"`
-	Name          string `toml:"NAME,omitzero"`
-	BlockCount    int64  `toml:"BLOCK_COUNT,omitzero"`
-	RedisHost     string `toml:"REDIS_HOST,omitzero"`
-	RedisPort     int32  `toml:"REDIS_PORT,omitzero"`
-	RedisPassword string `toml:"REDIS_PASSWORD,omitzero"`
+	TxRpcUrl      []string `toml:"TX_RPC_URL,omitzero"`
+	User          string   `toml:"USER,omitzero"`
+	Password      string   `toml:"PASSWORD,omitzero"`
+	Host          string   `toml:"HOST,omitzero"`
+	Port          int32    `toml:"PORT,omitzero"`
+	Name          string   `toml:"NAME,omitzero"`
+	BlockCount    int64    `toml:"BLOCK_COUNT,omitzero"`
+	RedisHost     string   `toml:"REDIS_HOST,omitzero"`
+	RedisPort     int32    `toml:"REDIS_PORT,omitzero"`
+	RedisPassword string   `toml:"REDIS_PASSWORD,omitzero"`
+}
+
+type rpcStatus struct {
+	Url       string
+	CoolDown  bool
+	FailCount int64
 }
 
 var (
@@ -33,6 +40,8 @@ var (
 	GNetwork    string
 	GMysql      *oo.MysqlPool
 	GRedis      *oo.RedisPool
+	GRpc        string
+	RpcMap      map[string]*rpcStatus = make(map[string]*rpcStatus)
 )
 
 func main() {
@@ -78,5 +87,43 @@ func main() {
 		return
 	}
 
+	err = initRpc()
+	if err != nil {
+		oo.LogW("Failed to init rpc. %v", err)
+		return
+	}
+
 	FullSync()
+}
+
+func initRpc() (err error) {
+	if len(GDatabase.TxRpcUrl) < 1 {
+		return errors.New("rpc not found")
+	}
+
+	for _, v := range GDatabase.TxRpcUrl {
+		RpcMap[v] = &rpcStatus{
+			Url:       v,
+			CoolDown:  false,
+			FailCount: 0,
+		}
+	}
+	GRpc = GDatabase.TxRpcUrl[0]
+	return nil
+}
+
+func updateRpc() {
+	RpcMap[GRpc].CoolDown = true
+	RpcMap[GRpc].FailCount++
+
+	minUsed := RpcMap[GDatabase.TxRpcUrl[0]]
+
+	for _, v := range RpcMap {
+		if minUsed.FailCount > v.FailCount {
+			minUsed = v
+		}
+	}
+
+	GRpc = minUsed.Url
+	RpcMap[GRpc].CoolDown = false
 }

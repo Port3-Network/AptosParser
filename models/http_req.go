@@ -37,12 +37,13 @@ func HttpGet(url string, timeout int64) (data []byte, currentBlock string, err e
 	defer resp.Body.Close()
 
 	if http.StatusOK != resp.StatusCode {
-		return nil, "", errors.Wrap(err, "StatusCode error")
+		oo.LogD("url: %v, response code: %v", url, resp.StatusCode)
+		return nil, "", errors.New("statusCode err")
 	}
 	buf, err := io.ReadAll(resp.Body)
 	if nil != err {
 		oo.LogD("url:[%s] ioutil.ReadAll err, msg: %v", url, err)
-		return nil, "", errors.Wrap(err, "ioutil.ReadAll error")
+		return nil, "", errors.New("ioutil.ReadAll error")
 	}
 
 	block := resp.Header.Get("x-aptos-block-height")
