@@ -27,15 +27,18 @@ func FullSync() {
 		var end int64
 		txs, err := GetTransactions(strconv.FormatInt(start, 10), limit)
 		if err != nil {
-			if err.Error() == "getBuf err" {
+			switch err.Error() {
+			case "getBuf err":
 				if limit >= minCount {
 					limit = limit / 2
 				} else {
 					time.Sleep(time.Second * 3)
 				}
-				continue
+			case "statusCode err":
+				updateRpc()
+			default:
+				oo.LogD("GetTransactions err, msg: %v", err)
 			}
-			oo.LogD("GetTransactions err, msg: %v", err)
 			continue
 		}
 		if int(limit) != len(*txs) {
@@ -65,11 +68,10 @@ func FullSync() {
 func GetTransactions(start string, limit int64) (r *[]models.TransactionRsp, err error) {
 	r = &[]models.TransactionRsp{}
 	sTime := time.Now().UnixMilli()
-	url := fmt.Sprintf("%s/transactions?start=%s&limit=%d", GDatabase.TxRpcUrl, start, limit)
-	oo.LogD("url: %v\n", url)
+	url := fmt.Sprintf("%s/transactions?start=%s&limit=%d", GRpc, start, limit)
 	buf, _, err := models.HttpGet(url, 2)
 	if err != nil {
-		return r, fmt.Errorf("tx HttpGet msg: %v", err)
+		return r, err
 	}
 	if buf == nil {
 		return nil, oo.NewError("getBuf err")
