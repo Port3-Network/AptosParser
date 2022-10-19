@@ -6,9 +6,11 @@ import (
 	u "net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Port3-Network/AptosParser/models"
 	oo "github.com/Port3-Network/liboo"
+	"github.com/garyburd/redigo/redis"
 )
 
 type nftToken struct {
@@ -56,6 +58,7 @@ func NewDbSaver(height, block_ts uint64) *DbSaver {
 
 func (db *DbSaver) Commit() error {
 	oo.LogD("db(height: %d) Commit", db.height)
+	sTime := time.Now().UnixMilli()
 
 	dbConn, dbTx, err := oo.NewSqlTxConn()
 	if err != nil {
@@ -64,46 +67,89 @@ func (db *DbSaver) Commit() error {
 	}
 	defer oo.CloseSqlTxConn(dbConn, dbTx, &err)
 
+	blockStart := time.Now().UnixMilli()
 	if err := db.doCommitBlock(dbTx); err != nil {
 		oo.LogD("doCommitBlock %v", err)
 		return err
 	}
+	blockEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitBlock due: %vms\n", blockEnd-blockStart)
+
+	txStart := time.Now().UnixMilli()
 	if err := db.doCommitTransaction(dbTx); err != nil {
 		oo.LogD("doCommitTransaction %v", err)
 		return err
 	}
+
+	txEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitTransaction due: %vms\n", txEnd-txStart)
+
+	payloadStart := time.Now().UnixMilli()
 	if err := db.doCommitPayload(dbTx); err != nil {
 		oo.LogD("doCommitPayload %v", err)
 		return err
 	}
+	payloadEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitPayload due: %vms\n", payloadEnd-payloadStart)
+
+	recordCoinStart := time.Now().UnixMilli()
 	if err := db.doCommitRecordCoin(dbTx); err != nil {
 		oo.LogD("doCommitRecordToken %v", err)
 		return err
 	}
+	recordCoinEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitRecordCoin due: %vms\n", recordCoinEnd-recordCoinStart)
+
+	hCoinStart := time.Now().UnixMilli()
 	if err := db.doCommitHistoryCoin(dbTx); err != nil {
 		oo.LogD("doCommitHistoryToken %v", err)
 		return err
 	}
+	hCOinCoinEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitHistoryCoin due: %vms\n", hCOinCoinEnd-hCoinStart)
+
+	collectionStart := time.Now().UnixMilli()
 	if err := db.doCommitCollection(dbTx); err != nil {
 		oo.LogD("doCommitCollection %v", err)
 		return err
 	}
+	collectionEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitCollection due: %vms\n", collectionEnd-collectionStart)
+
+	recordTokenStart := time.Now().UnixMilli()
 	if err := db.doCommitRecordToken(dbTx); err != nil {
 		oo.LogD("doCommitRecordToken %v", err)
 		return err
 	}
+	recordTokenEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitRecordToken due: %vms\n", recordTokenEnd-recordTokenStart)
+
+	assetTokenStart := time.Now().UnixMilli()
 	if err := db.doCommitAssetToken(dbTx); err != nil {
 		oo.LogD("doCommitAssetToken %v", err)
 		return err
 	}
+	assetTokenEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitAssetToken due: %vms\n", assetTokenEnd-assetTokenStart)
+
+	hTokenStart := time.Now().UnixMilli()
 	if err := db.doCommitHistoryToken(dbTx); err != nil {
 		oo.LogD("doCommitHistoryToken %v", err)
 		return err
 	}
+	hTokenEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitHistoryToken due: %vms\n", hTokenEnd-hTokenStart)
+
+	heightStart := time.Now().UnixMilli()
 	if err := db.doCommitSyncHeight(dbTx); err != nil {
 		oo.LogD("doCommitSyncHeight %v", err)
 		return err
 	}
+	heightEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitSyncHeight due: %vms\n", heightEnd-heightStart)
+
+	eTime := time.Now().UnixMilli()
+	oo.LogD("commit due: %vms\n", eTime-sTime)
 	return nil
 }
 
@@ -168,14 +214,25 @@ func (db *DbSaver) doCommitRecordCoin(tx *sql.Tx) (err error) {
 		return nil
 	}
 	for _, record := range db.recordCoin {
-		var recordCoin models.RecordCoin
-		sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
-			Where("resource", record.Resource).Select("*")
-		err := oo.SqlGet(sqlStr, &recordCoin)
-		if err != nil && err != oo.ErrNoRows {
+		selectStart := time.Now().UnixMilli()
+
+		// var recordCoin models.RecordCoin
+		// sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
+		// 	Where("resource", record.Resource).Select("*")
+		// err := oo.SqlGet(sqlStr, &recordCoin)
+		// if err != nil && err != oo.ErrNoRows {
+		// 	return err
+		// }
+
+		recordCoin, err := redisHGet(fmt.Sprintf(`%s_record_coin`, GDatabase.Name), record.Resource)
+		if err != nil && err != redis.ErrNil {
 			return err
 		}
-		if err == oo.ErrNoRows {
+		fmt.Printf("record: %v\n", recordCoin)
+		oo.LogD("select due: %v\n", time.Now().UnixMilli()-selectStart)
+
+		if err == redis.ErrNil {
+			insertStart := time.Now().UnixMilli()
 			sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
 				Insert(map[string]interface{}{
 					"version":       record.Version,
@@ -187,24 +244,39 @@ func (db *DbSaver) doCommitRecordCoin(tx *sql.Tx) (err error) {
 					"resource":      record.Resource,
 					"name":          record.Name,
 					"symbol":        record.Symbol,
+					"decimals":      record.Decimals,
 				})
 			if err := oo.SqlTxExec(tx, sqlStr); err != nil {
 				return err
 			}
-		} else {
-			sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
-				Where("resource", record.Resource).
-				Update(map[string]interface{}{
-					"version": record.Version,
-					"hash":    record.Hash,
-					"tx_time": record.TxTime,
-					"name":    record.Name,
-					"symbol":  record.Symbol,
-				})
-			if err := oo.SqlTxExec(tx, sqlStr); err != nil {
-				return err
-			}
+
+			redisHSet(fmt.Sprintf(`%s_record_coin`, GDatabase.Name), *record)
+
+			oo.LogD("insert due: %v\n", time.Now().UnixMilli()-insertStart)
 		}
+		// do not do any thing
+		// else {
+		// 	updateStart := time.Now().UnixMilli()
+		// 	sqlStr := oo.NewSqler().Table(models.TableRecordCoin).
+		// 		Where("resource", record.Resource).
+		// 		Update(map[string]interface{}{
+		// 			"version": record.Version,
+		// 			"hash":    record.Hash,
+		// 			"tx_time": record.TxTime,
+		// 			"name":    record.Name,
+		// 			"symbol":  record.Symbol,
+		// 		})
+		// 	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
+		// 		return err
+		// 	}
+		// 	ret, err := tx.Exec(sqlStr)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	d, _ := json.Marshal(ret)
+		// 	fmt.Printf("ret: %v\n", string(d))
+		// 	oo.LogD("update due: %v\n", time.Now().UnixMilli()-updateStart)
+		// }
 	}
 	return nil
 }

@@ -1,7 +1,7 @@
-DROP DATABASE IF EXISTS aptos_sync_full_testnet;
-CREATE DATABASE IF NOT EXISTS aptos_sync_full_testnet;
-USE aptos_sync_full_testnet;
-SET sql_mode="modes,NO_ENGINE_SUBSTITUTION";
+DROP DATABASE IF EXISTS aptos_sync_testnet;
+CREATE DATABASE IF NOT EXISTS aptos_sync_testnet;
+USE aptos_sync_testnet;
+SET sql_mode="NO_ENGINE_SUBSTITUTION";
 
 -- NOTE: aptos address length -> 66
 -- ----------------------------
@@ -257,3 +257,6 @@ CREATE TABLE `history_token` (
     KEY `token_data` (`creator`, `collection`, `name`),
     KEY `token_action` (`action`)
 ) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE record_coin ADD decimals int NOT NULL DEFAULT 0 COMMENT 'coin decimals';
+

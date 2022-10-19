@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/DeanThompson/ginpprof v0.0.0-20201112072838-007b1e56b2e1
 	github.com/Port3-Network/liboo v0.0.0-20221008030303-60a46fe7ba9c
+	github.com/garyburd/redigo v1.6.2
 	github.com/gin-gonic/gin v1.8.1
 	github.com/pkg/errors v0.9.1
 	github.com/swaggo/files v0.0.0-20220728132757-551d4a08d97a
@@ -19,7 +20,6 @@ require (
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/garyburd/redigo v1.6.2 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect

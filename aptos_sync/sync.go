@@ -64,7 +64,9 @@ func FullSync() {
 
 func GetTransactions(start string, limit int64) (r *[]models.TransactionRsp, err error) {
 	r = &[]models.TransactionRsp{}
+	sTime := time.Now().UnixMilli()
 	url := fmt.Sprintf("%s/transactions?start=%s&limit=%d", GDatabase.TxRpcUrl, start, limit)
+	oo.LogD("url: %v\n", url)
 	buf, _, err := models.HttpGet(url, 2)
 	if err != nil {
 		return r, fmt.Errorf("tx HttpGet msg: %v", err)
@@ -77,7 +79,8 @@ func GetTransactions(start string, limit int64) (r *[]models.TransactionRsp, err
 	if err != nil {
 		return r, fmt.Errorf("tx jsonUnmarshal msg: %v", err)
 	}
-
+	eTime := time.Now().UnixMilli()
+	oo.LogD("http due: %vms\n", eTime-sTime)
 	return r, nil
 }
 

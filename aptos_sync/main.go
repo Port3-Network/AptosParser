@@ -11,13 +11,16 @@ import (
 )
 
 type DataBase struct {
-	TxRpcUrl   string `toml:"TX_RPC_URL,omitzero"`
-	User       string `toml:"USER,omitzero"`
-	Password   string `toml:"PASSWORD,omitzero"`
-	Host       string `toml:"HOST,omitzero"`
-	Port       int32  `toml:"PORT,omitzero"`
-	Name       string `toml:"NAME,omitzero"`
-	BlockCount int64  `toml:"BLOCK_COUNT,omitzero"`
+	TxRpcUrl      string `toml:"TX_RPC_URL,omitzero"`
+	User          string `toml:"USER,omitzero"`
+	Password      string `toml:"PASSWORD,omitzero"`
+	Host          string `toml:"HOST,omitzero"`
+	Port          int32  `toml:"PORT,omitzero"`
+	Name          string `toml:"NAME,omitzero"`
+	BlockCount    int64  `toml:"BLOCK_COUNT,omitzero"`
+	RedisHost     string `toml:"REDIS_HOST,omitzero"`
+	RedisPort     int32  `toml:"REDIS_PORT,omitzero"`
+	RedisPassword string `toml:"REDIS_PASSWORD,omitzero"`
 }
 
 var (
@@ -29,6 +32,7 @@ var (
 	GDatabase   *DataBase
 	GNetwork    string
 	GMysql      *oo.MysqlPool
+	GRedis      *oo.RedisPool
 )
 
 func main() {
@@ -67,5 +71,12 @@ func main() {
 		oo.LogW("Failed to init mysql. %v", err)
 		return
 	}
+
+	GRedis, err = oo.InitRedisPool(GDatabase.RedisHost, GDatabase.RedisPort, GDatabase.RedisPassword)
+	if err != nil {
+		oo.LogW("Failed to init redis. %v", err)
+		return
+	}
+
 	FullSync()
 }

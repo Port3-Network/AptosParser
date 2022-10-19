@@ -34,3 +34,17 @@ cd aptos_sync && go build
 ```
 ./aptos_sync -n main
 ```
+
+
+### 5. fix data to loog
+```bash
+select @@global.sql_mode;
++--------------------------------------------+
+| @@global.sql_mode                          |
++--------------------------------------------+
+| STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION |
++--------------------------------------------+
+```
+```bash
+
+```
