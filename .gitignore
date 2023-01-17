@@ -20,3 +20,5 @@ aptos_sync/aptos_sync
 aptos_api/aptos_api
 test
 docs
+
+.idea

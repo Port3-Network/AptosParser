@@ -80,11 +80,12 @@ type TxPayload struct {
 }
 
 type TxEvent struct {
-	Key            string    `json:"key"`
-	SequenceNumber string    `json:"sequence_number"` //
-	Type           string    `json:"type"`            //
-	Guid           EventGuid `json:"guid"`            //
-	Data           EventData `json:"data"`            //
+	Key            string      `json:"key"`
+	SequenceNumber string      `json:"sequence_number"` //
+	Type           string      `json:"type"`            //
+	Guid           EventGuid   `json:"guid"`            //
+	RawData        interface{} `json:"data"`            // auxiliary filed
+	Data           EventData   //
 }
 
 type EventData struct {
