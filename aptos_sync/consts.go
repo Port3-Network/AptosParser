@@ -15,6 +15,7 @@ const (
 	ActionTransfer = 3
 
 	TypeCallFunction  = "entry_function_payload"
+	EventString       = "0x1::string::String"      // ignore this event type in current parse logic
 	EventWithdraw     = "0x1::coin::WithdrawEvent" // -
 	EventDeposit      = "0x1::coin::DepositEvent"  // +
 	EventCoinRegister = "0x1::account::CoinRegisterEvent"
