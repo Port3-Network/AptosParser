@@ -120,6 +120,9 @@ func GetAssetToken(c *gin.Context) {
 	nft := make(map[collectionInfo]*NftInfo)
 
 	for _, v := range data {
+		if v.CollectionCreator == "" && v.CollectionName == "" && v.TokenName == "" {
+			continue
+		}
 		cInfo := collectionInfo{
 			Creator: v.CollectionCreator,
 			Name:    v.CollectionName,
