@@ -99,7 +99,7 @@ func GetAssetToken(c *gin.Context) {
 		sqler.Where("creator", nftId.Creator).Where("collection", u.QueryEscape(nftId.Collection))
 	}
 	sqlStr := sqler.Select("id,version,hash,tx_time,owner,creator AS collection_creator,collection AS collection_name,name AS token_name,amount")
-	oo.LogD("%s: sqlStr: %v\n", sqlStr)
+	oo.LogD("%s: sqlStr: %v\n", c.FullPath(), sqlStr)
 	if err = oo.SqlSelect(sqlStr, &data); err != nil {
 		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
 		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
@@ -133,7 +133,7 @@ func GetAssetToken(c *gin.Context) {
 				Where("r.collection", v.CollectionName).
 				Where("r.name", v.TokenName).
 				Select("c.name AS collection_name,c.description AS collection_description,c.uri AS collection_uri,r.description AS token_description,r.uri AS token_uri")
-			oo.LogD("innsql: %v\n", innSql)
+			oo.LogD("%s innsql: %v\n", c.FullPath(), innSql)
 			if err := oo.SqlGet(innSql, &resData); err != nil {
 				oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
 			}
