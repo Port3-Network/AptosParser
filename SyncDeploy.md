@@ -36,7 +36,7 @@ cd aptos_sync && go build
 ```
 
 
-### 5. fix data to loog
+### 5. fix data to long
 ```bash
 select @@global.sql_mode;
 +--------------------------------------------+

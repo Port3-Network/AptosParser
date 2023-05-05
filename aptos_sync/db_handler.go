@@ -87,13 +87,17 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 }
 
 func handlerPayload(saver *DbSaver, txTime, sequenceNum int64, data models.TransactionRsp) {
+	payloadFunc := data.Payload.Function
+	if len(data.Payload.Function) > 128 {
+		payloadFunc = data.Payload.Function[:128]
+	}
 	saver.payload = append(saver.payload, &models.Payload{
 		Version:        data.Version,
 		Hash:           data.Hash,
 		TxTime:         txTime,
 		SequenceNumber: sequenceNum,
 		Sender:         data.Sender,
-		PayloadFunc:    data.Payload.Function,
+		PayloadFunc:    payloadFunc,
 		PayloadType:    data.Payload.Type,
 	})
 }
