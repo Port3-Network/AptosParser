@@ -8,6 +8,7 @@ import (
 
 	"github.com/Port3-Network/AptosParser/models"
 	oo "github.com/Port3-Network/liboo"
+	"github.com/gogf/gf/v2/util/gconv"
 )
 
 func FullSync() {
@@ -85,9 +86,23 @@ func GetTransactions(start string, limit int64) (r *[]models.TransactionRsp, err
 	for _, tx := range *r {
 		for _, event := range tx.Events {
 			if event.Type != EventString {
-				data, _ := json.Marshal(event.RawData)
-				if err = json.Unmarshal(data, &event.Data); err != nil {
-					return r, fmt.Errorf("event data unmarshal: %v", err)
+				//data, _ := json.Marshal(event.RawData)
+				//if err = json.Unmarshal(data, &event.Data); err != nil {
+				//	return r, fmt.Errorf("event data unmarshal: %v", err)
+				//}
+				event.Data.Amount = gconv.String(event.RawData["amount"])
+				event.Data.CollectionName = gconv.String(event.RawData["collection_name"])
+				event.Data.Name = gconv.String(event.RawData["name"])
+				event.Data.Creator = gconv.String(event.RawData["creator"])
+				event.Data.Description = gconv.String(event.RawData["description"])
+				event.Data.Maximum = gconv.String(event.RawData["maximum"])
+				event.Data.Uri = gconv.String(event.RawData["uri"])
+				event.Data.Id = event.RawData["uri"]
+				if typeInfo, found := event.RawData["type_info"]; found {
+					ti, _ := json.Marshal(typeInfo)
+					if err = json.Unmarshal(ti, &event.Data.TypeInfo); err != nil {
+						return r, fmt.Errorf("event data unmarshal: %v", err)
+					}
 				}
 			}
 		}
