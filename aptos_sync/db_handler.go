@@ -125,10 +125,10 @@ func handlerHistoryCoin(saver *DbSaver, txTime, sequenceNum int64, data models.T
 		var sender, receiver string = ZeroAddress, ZeroAddress
 		cnum := event.Guid.CreationNumber
 		addr := event.Guid.AccountAddress
+		amount = event.Data.Amount
 		switch event.Type {
 		case EventDeposit:
 			receiver = event.Guid.AccountAddress
-			amount = event.Data.Amount
 			for _, c := range data.Changes {
 				if cnum == c.Data.Data.DepositEvent.Guid.ID.CreationNum && addr == c.Data.Data.DepositEvent.Guid.ID.Addr {
 					t := ParseType(c.Data.Type)
@@ -140,7 +140,6 @@ func handlerHistoryCoin(saver *DbSaver, txTime, sequenceNum int64, data models.T
 			}
 		case EventWithdraw:
 			sender = event.Guid.AccountAddress
-			amount = event.Data.Amount
 			for _, c := range data.Changes {
 				if cnum == c.Data.Data.WithdrawEvent.Guid.ID.CreationNum && addr == c.Data.Data.WithdrawEvent.Guid.ID.Addr {
 					t := ParseType(c.Data.Type)

@@ -31,7 +31,7 @@ type TransactionRsp struct {
 	GasUnitPrice            string     `json:"gas_unit_price"`
 	ExpirationTimestampSecs string     `json:"expiration_timestamp_secs"`
 	Payload                 TxPayload  `json:"payload"` //
-	Events                  []TxEvent  `json:"events"`  //
+	Events                  []*TxEvent `json:"events"`  //
 	Timestamp               string     `json:"timestamp"`
 	// Signature               BlockTxSignature `json:"signature"` //
 }
