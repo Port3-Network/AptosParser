@@ -1,5 +1,7 @@
 package models
 
+import "encoding/json"
+
 const TableSysconfig = "sysconfig"
 
 type Sysconfig struct {
@@ -58,6 +60,22 @@ type Payload struct {
 	PayloadType    string `db:"payload_type,omitempty"`
 	CreateAt       string `db:"create_at,omitempty"`
 	UpdateAt       string `db:"update_at,omitempty"`
+}
+
+const TablePayloadDetail = "payload_detail"
+
+type PayloadDetail struct {
+	Id            int64           `db:"id,omitempty"`
+	Version       string          `db:"version,omitempty"`
+	Hash          string          `db:"hash,omitempty"`
+	TxTime        int64           `db:"tx_time,omitempty"`
+	Success       bool            `db:"success,omitempty"`
+	Sender        string          `db:"sender,omitempty"`
+	PayloadFunc   string          `db:"payload_func,omitempty"`
+	TypeArguments json.RawMessage `db:"type_arguments,omitempty"`
+	Arguments     json.RawMessage `db:"arguments,omitempty"`
+	CreateAt      string          `db:"create_at,omitempty"`
+	UpdateAt      string          `db:"update_at,omitempty"`
 }
 
 const TableRecordCoin = "record_coin"

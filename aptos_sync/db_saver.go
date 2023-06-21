@@ -29,30 +29,32 @@ type coinInfo struct {
 type DbSaver struct {
 	height uint64
 
-	block        []*models.Block
-	transaction  []*models.Transaction
-	payload      []*models.Payload
-	recordCoin   map[coinInfo]*models.RecordCoin
-	historyCoin  []*models.HistoryCoin
-	collection   []*models.Collection
-	recordToken  []*models.RecordToken
-	assetToken   map[nftToken]*models.AssetToken
-	historyToken []*models.HistoryToken
+	block         []*models.Block
+	transaction   []*models.Transaction
+	payload       []*models.Payload
+	payloadDetail []*models.PayloadDetail
+	recordCoin    map[coinInfo]*models.RecordCoin
+	historyCoin   []*models.HistoryCoin
+	collection    []*models.Collection
+	recordToken   []*models.RecordToken
+	assetToken    map[nftToken]*models.AssetToken
+	historyToken  []*models.HistoryToken
 }
 
 func NewDbSaver(height, block_ts uint64) *DbSaver {
 	return &DbSaver{
 		height: height,
 
-		block:        make([]*models.Block, 0),
-		transaction:  make([]*models.Transaction, 0),
-		payload:      make([]*models.Payload, 0),
-		recordCoin:   make(map[coinInfo]*models.RecordCoin),
-		historyCoin:  make([]*models.HistoryCoin, 0),
-		collection:   make([]*models.Collection, 0),
-		recordToken:  make([]*models.RecordToken, 0),
-		assetToken:   make(map[nftToken]*models.AssetToken),
-		historyToken: make([]*models.HistoryToken, 0),
+		block:         make([]*models.Block, 0),
+		transaction:   make([]*models.Transaction, 0),
+		payload:       make([]*models.Payload, 0),
+		payloadDetail: make([]*models.PayloadDetail, 0),
+		recordCoin:    make(map[coinInfo]*models.RecordCoin),
+		historyCoin:   make([]*models.HistoryCoin, 0),
+		collection:    make([]*models.Collection, 0),
+		recordToken:   make([]*models.RecordToken, 0),
+		assetToken:    make(map[nftToken]*models.AssetToken),
+		historyToken:  make([]*models.HistoryToken, 0),
 	}
 }
 
@@ -91,6 +93,14 @@ func (db *DbSaver) Commit() error {
 	}
 	payloadEnd := time.Now().UnixMilli()
 	oo.LogD("doCommitPayload due: %vms\n", payloadEnd-payloadStart)
+
+	payloadDetailStart := time.Now().UnixMilli()
+	if err := db.doCommitPayloadDetail(dbTx); err != nil {
+		oo.LogD("doCommitPayloadDetail %v", err)
+		return err
+	}
+	payloadDetailEnd := time.Now().UnixMilli()
+	oo.LogD("doCommitPayloadDetail due: %vms\n", payloadDetailEnd-payloadDetailStart)
 
 	recordCoinStart := time.Now().UnixMilli()
 	if err := db.doCommitRecordCoin(dbTx); err != nil {
@@ -203,6 +213,23 @@ func (db *DbSaver) doCommitPayload(tx *sql.Tx) (err error) {
 		vals = append(vals, v)
 	}
 	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,sequence_number,sender,payload_func,payload_type) VALUES %s`, models.TablePayload, strings.Join(vals, ","))
+	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (db *DbSaver) doCommitPayloadDetail(tx *sql.Tx) (err error) {
+	if len(db.payloadDetail) == 0 {
+		return nil
+	}
+	var vals []string
+	for _, payload := range db.payloadDetail {
+		v := fmt.Sprintf("('%s','%s',%d,%t,'%s','%s','%s', '%s')",
+			payload.Version, payload.Hash, payload.TxTime, payload.Success, payload.Sender, payload.PayloadFunc, payload.TypeArguments, payload.Arguments)
+		vals = append(vals, v)
+	}
+	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,success,sender,payload_func,type_arguments,arguments) VALUES %s`, models.TablePayloadDetail, strings.Join(vals, ","))
 	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
 		return err
 	}

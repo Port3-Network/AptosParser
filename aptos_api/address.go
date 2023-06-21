@@ -4,12 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/Port3-Network/AptosParser/models"
 	oo "github.com/Port3-Network/liboo"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strings"
 )
 
 type GetActionReq struct {
@@ -71,7 +70,7 @@ func GetAddressAction(c *gin.Context) {
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset)).
 		Order("p.id DESC")
-		// Order("p.tx_time DESC")
+	// Order("p.tx_time DESC")
 
 	if req.Address != "" {
 		sqler.Where("p.sender", req.Address)
@@ -132,6 +131,129 @@ func GetAddressAction(c *gin.Context) {
 		funcLike := fmt.Sprintf("p.payload_func like '%s%%'", req.FuncName)
 		sqler2.Where(funcLike)
 		// sqler2.Where("p.payload_func", req.FuncName)
+	}
+	if req.StartTime != 0 {
+		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
+		sqler2.Where(startWhere)
+	}
+	if req.EndTime != 0 {
+		endWhere := fmt.Sprintf("p.tx_time <= %d", req.EndTime*1000)
+		sqler2.Where(endWhere)
+	}
+	sqlStr2 := sqler2.Select("COUNT(*) AS total")
+	oo.LogD("%s: sqlStr2: %v\n", c.FullPath(), sqlStr2)
+
+	if err = oo.SqlGet(sqlStr2, &rsp.Total); err != nil {
+		oo.LogD("%s: oo.SqlGet err, msg: %v", c.FullPath(), err)
+		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
+		return
+	}
+	appC.Response(http.StatusOK, SUCCESS, rsp)
+}
+
+type GetPayloadDetailReq struct {
+	FuncName  string `form:"funcName"`                                 // optional, call function
+	Address   string `form:"address"`                                  // optional, user address
+	StartTime int64  `form:"startTime"`                                // optional, begin time
+	EndTime   int64  `form:"endTime"`                                  // optional, end time
+	Offset    int64  `form:"offset" json:"offset" validate:"gte=0"`    // required, data offset
+	PageSize  int64  `form:"pageSize" json:"pageSize" validate:"gt=0"` // required, number of data a time
+}
+
+type GetPayloadDetailRsp struct {
+	List  []PayloadData `json:"list"`  // data list
+	Total int64         `json:"total"` // total num
+}
+
+type PayloadData struct {
+	Version       string          `json:"version"`       // tx version
+	Hash          string          `json:"hash"`          // tx hash
+	TxTime        int64           `json:"tx_time"`       // tx timestamp
+	Sender        string          `json:"sender"`        // tx sender
+	FuncName      string          `json:"function_name"` // call function
+	TypeArguments json.RawMessage `json:"type_arguments"`
+	Arguments     json.RawMessage `json:"arguments"`
+	CreateAt      string          `json:"create_at"`
+}
+
+func GetPayloadDetail(c *gin.Context) {
+	appC := Context{C: c}
+	req, rsp := &GetPayloadDetailReq{}, &GetPayloadDetailRsp{}
+	err := c.ShouldBindQuery(&req)
+	if err != nil {
+		oo.LogD("%s: ShouldBindQuery err, msg: %v", c.FullPath(), err)
+		appC.ResponseInvalidParam()
+		return
+	}
+	if err = oo.ValidateStruct(req); err != nil {
+		oo.LogD("%s: Check para err %v", c.FullPath(), err)
+		appC.ResponseInvalidParam()
+		return
+	}
+	var data []struct {
+		Version       string          `db:"version"`       // tx version
+		Hash          string          `db:"hash"`          // tx hash
+		TxTime        int64           `db:"tx_time"`       // tx timestamp
+		Sender        string          `db:"sender"`        // tx sender
+		FuncName      string          `db:"function_name"` // call function
+		TypeArguments json.RawMessage `db:"type_arguments"`
+		Arguments     json.RawMessage `db:"arguments"`
+		CreateAt      string          `db:"create_at"`
+	}
+	fmt.Printf("req: %v\n", req)
+	sqler := oo.NewSqler().Table(models.TablePayloadDetail+" AS p").Where("p.success = '%s'", true).
+		Limit(int(req.PageSize)).
+		Offset(int(req.Offset)).
+		Order("p.id DESC")
+
+	if req.FuncName != "" {
+		funcWhere := fmt.Sprintf("p.payload_func='%s'", req.FuncName)
+		sqler.Where(funcWhere)
+	}
+	if req.Address != "" {
+		senderWhere := fmt.Sprintf("p.sender='%s'", req.Address)
+		sqler.Where(senderWhere)
+	}
+	if req.StartTime != 0 {
+		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
+		sqler.Where(startWhere)
+	}
+	if req.EndTime != 0 {
+		endWhere := fmt.Sprintf("p.tx_time <= %d", req.EndTime*1000)
+		sqler.Where(endWhere)
+	}
+	sqlStr1 := sqler.Select("p.version,p.hash,p.tx_time,p.sender,p.payload_func AS function_name,p.type_arguments,p.arguments,p.create_at")
+	oo.LogD("%s: sqlStr1: %v\n", c.FullPath(), sqlStr1)
+	if err = oo.SqlSelect(sqlStr1, &data); err != nil {
+		oo.LogD("%s: oo.SqlSelect err, msg: %v", c.FullPath(), err)
+		appC.Response(http.StatusInternalServerError, ERROR_DB_ERROR, nil)
+		return
+	}
+	for _, v := range data {
+		rsp.List = append(rsp.List, PayloadData{
+			Version:       v.Version,
+			Hash:          v.Hash,
+			TxTime:        v.TxTime,
+			Sender:        v.Sender,
+			FuncName:      v.FuncName,
+			TypeArguments: v.TypeArguments,
+			Arguments:     v.Arguments,
+			CreateAt:      v.CreateAt,
+		})
+	}
+
+	sqler2 := oo.NewSqler().Table(models.TablePayloadDetail+" AS p").Where("p.success = '%s'", true).
+		Limit(int(req.PageSize)).
+		Offset(int(req.Offset)).
+		Order("p.id DESC")
+
+	if req.FuncName != "" {
+		funcWhere := fmt.Sprintf("p.payload_func='%s'", req.FuncName)
+		sqler2.Where(funcWhere)
+	}
+	if req.Address != "" {
+		senderWhere := fmt.Sprintf("p.sender='%s'", req.Address)
+		sqler2.Where(senderWhere)
 	}
 	if req.StartTime != 0 {
 		startWhere := fmt.Sprintf("p.tx_time >= %d", req.StartTime*1000)
