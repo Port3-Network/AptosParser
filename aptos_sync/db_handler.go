@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -57,6 +58,9 @@ func handlerUserTransaction(db *DbSaver, data models.TransactionRsp) error {
 		// payload -> done
 		handlerPayload(db, txTime, sequenceNum, data)
 
+		// payloadDetail -> done
+		handlerPayloadDetail(db, txTime, data)
+
 		// transaction -> done
 		handlerTx(db, txTime, sequenceNum, data)
 
@@ -99,6 +103,26 @@ func handlerPayload(saver *DbSaver, txTime, sequenceNum int64, data models.Trans
 		Sender:         data.Sender,
 		PayloadFunc:    payloadFunc,
 		PayloadType:    data.Payload.Type,
+	})
+}
+
+func handlerPayloadDetail(saver *DbSaver, txTime int64, data models.TransactionRsp) {
+	payloadFunc := data.Payload.Function
+	if len(data.Payload.Function) > 128 {
+		payloadFunc = data.Payload.Function[:128]
+	}
+	typeArguments, _ := json.Marshal(data.Payload.TypeArguments)
+	arguments, _ := json.Marshal(data.Payload.Arguments)
+
+	saver.payloadDetail = append(saver.payloadDetail, &models.PayloadDetail{
+		Version:       data.Version,
+		Hash:          data.Hash,
+		TxTime:        txTime,
+		Success:       data.Success,
+		Sender:        data.Sender,
+		PayloadFunc:   payloadFunc,
+		TypeArguments: typeArguments,
+		Arguments:     arguments,
 	})
 }
 

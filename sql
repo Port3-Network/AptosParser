@@ -95,6 +95,30 @@ CREATE TABLE `payload` (
 ) ENGINE=InnoDB  AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ----------------------------
+-- Table payload_detail -> tx log, which function to call
+-- ----------------------------
+DROP TABLE IF EXISTS `payload_detail`;
+
+CREATE TABLE `payload_detail` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'auto increment',
+  `version` char(32) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'tx version',
+  `hash` char(66) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'tx hash',
+  `tx_time` bigint NOT NULL DEFAULT '0' COMMENT 'block timestamp',
+  `success` tinyint NOT NULL DEFAULT 0 COMMENT 'vm state',
+  `sender` char(66) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'tx sender',
+  `payload_func` char(128) COLLATE utf8mb4_general_ci NOT NULL COMMENT 'call function, payload function',
+  `type_arguments` json DEFAULT NULL COMMENT 'call type, payload type',
+  `arguments` json DEFAULT NULL,
+  `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `hash` (`hash`),
+  KEY `version` (`version`),
+  KEY `tx_time` (`tx_time`),
+  KEY `sender` (`sender`),
+  KEY `payload_func` (`payload_func`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- ----------------------------
 -- Table record_coin -> publish pkg record
 -- ----------------------------
 DROP TABLE IF EXISTS `record_coin`;
