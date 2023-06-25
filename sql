@@ -112,11 +112,11 @@ CREATE TABLE `payload_detail` (
   `create_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
-  KEY `hash` (`hash`),
   KEY `version` (`version`),
   KEY `tx_time` (`tx_time`),
   KEY `sender` (`sender`),
-  KEY `payload_func` (`payload_func`)
+  KEY `payload_func` (`payload_func`),
+  UNIQUE KEY `hash` (`hash`)
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 -- ----------------------------
 -- Table record_coin -> publish pkg record

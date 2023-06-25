@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	u "net/url"
 	"strconv"
 	"strings"
@@ -95,7 +96,7 @@ func (db *DbSaver) Commit() error {
 	oo.LogD("doCommitPayload due: %vms\n", payloadEnd-payloadStart)
 
 	payloadDetailStart := time.Now().UnixMilli()
-	if err := db.doCommitPayloadDetail(dbTx); err != nil {
+	if err := db.doCommitPayloadDetail(dbConn); err != nil {
 		oo.LogD("doCommitPayloadDetail %v", err)
 		return err
 	}
@@ -219,21 +220,33 @@ func (db *DbSaver) doCommitPayload(tx *sql.Tx) (err error) {
 	return nil
 }
 
-func (db *DbSaver) doCommitPayloadDetail(tx *sql.Tx) (err error) {
+func (db *DbSaver) doCommitPayloadDetail(_db *sqlx.DB) (err error) {
 	if len(db.payloadDetail) == 0 {
 		return nil
 	}
-	var vals []string
-	for _, payload := range db.payloadDetail {
-		v := fmt.Sprintf("('%s','%s',%d,%t,'%s','%s','%s', '%s')",
-			payload.Version, payload.Hash, payload.TxTime, payload.Success, payload.Sender, payload.PayloadFunc, payload.TypeArguments, payload.Arguments)
-		vals = append(vals, v)
-	}
-	sqlStr := fmt.Sprintf(`INSERT INTO %s(version,hash,tx_time,success,sender,payload_func,type_arguments,arguments) VALUES %s`, models.TablePayloadDetail, strings.Join(vals, ","))
-	if err := oo.SqlTxExec(tx, sqlStr); err != nil {
+
+	tx, err := _db.Begin()
+	if err != nil {
 		return err
 	}
-	return nil
+	stmt, err := tx.Prepare(`
+        INSERT IGNORE INTO payload_detail (
+            version, hash, tx_time, success, sender, payload_func, type_arguments, arguments
+        )
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, pd := range db.payloadDetail {
+		_, err := stmt.Exec(pd.Version, pd.Hash, pd.TxTime, pd.Success, pd.Sender, pd.PayloadFunc, pd.TypeArguments, pd.Arguments)
+		if err != nil {
+			return tx.Rollback()
+		}
+	}
+	return tx.Commit()
 }
 
 func (db *DbSaver) doCommitRecordCoin(tx *sql.Tx) (err error) {
