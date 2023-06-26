@@ -201,7 +201,7 @@ func GetPayloadDetail(c *gin.Context) {
 		CreateAt      string          `db:"create_at"`
 	}
 	fmt.Printf("req: %v\n", req)
-	sqler := oo.NewSqler().Table(models.TablePayloadDetail+" AS p").Where("p.success = '%s'", true).
+	sqler := oo.NewSqler().Table(models.TablePayloadDetail + " AS p").Where("p.success = true").
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset)).
 		Order("p.id DESC")
@@ -242,7 +242,7 @@ func GetPayloadDetail(c *gin.Context) {
 		})
 	}
 
-	sqler2 := oo.NewSqler().Table(models.TablePayloadDetail+" AS p").Where("p.success = '%s'", true).
+	sqler2 := oo.NewSqler().Table(models.TablePayloadDetail+" AS p").Where("p.success = true", true).
 		Limit(int(req.PageSize)).
 		Offset(int(req.Offset)).
 		Order("p.id DESC")
