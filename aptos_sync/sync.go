@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -90,15 +91,26 @@ func GetTransactions(start string, limit int64) (r *[]models.TransactionRsp, err
 				//if err = json.Unmarshal(data, &event.Data); err != nil {
 				//	return r, fmt.Errorf("event data unmarshal: %v", err)
 				//}
-				event.Data.Amount = gconv.String(event.RawData["amount"])
-				event.Data.CollectionName = gconv.String(event.RawData["collection_name"])
-				event.Data.Name = gconv.String(event.RawData["name"])
-				event.Data.Creator = gconv.String(event.RawData["creator"])
-				event.Data.Description = gconv.String(event.RawData["description"])
-				event.Data.Maximum = gconv.String(event.RawData["maximum"])
-				event.Data.Uri = gconv.String(event.RawData["uri"])
-				event.Data.Id = event.RawData["uri"]
-				if typeInfo, found := event.RawData["type_info"]; found {
+				valueType := reflect.TypeOf(event.RawData)
+				if valueType.Kind() == reflect.String {
+					oo.LogD("event.RawData type of string. continue, data: %v", event.RawData)
+					continue
+				}
+
+				rawData, ok := event.RawData.(map[string]interface{})
+				if !ok {
+					oo.LogD("event.RawData.(map[string]interface{}) !ok, data: %v", event.RawData)
+					continue
+				}
+				event.Data.Amount = gconv.String(rawData["amount"])
+				event.Data.CollectionName = gconv.String(rawData["collection_name"])
+				event.Data.Name = gconv.String(rawData["name"])
+				event.Data.Creator = gconv.String(rawData["creator"])
+				event.Data.Description = gconv.String(rawData["description"])
+				event.Data.Maximum = gconv.String(rawData["maximum"])
+				event.Data.Uri = gconv.String(rawData["uri"])
+				event.Data.Id = rawData["uri"]
+				if typeInfo, found := rawData["type_info"]; found {
 					ti, _ := json.Marshal(typeInfo)
 					if err = json.Unmarshal(ti, &event.Data.TypeInfo); err != nil {
 						return r, fmt.Errorf("event data unmarshal: %v", err)
